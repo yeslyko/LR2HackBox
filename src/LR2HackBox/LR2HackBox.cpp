@@ -1,4 +1,7 @@
-﻿#include "LR2HackBox/LR2HackBox.hpp"
+﻿#define SHOWIMGUIDEMO 0
+
+#include "Features/MemoryTracker.hpp")
+#include "LR2HackBox/LR2HackBox.hpp"
 
 #include "Helpers/Helpers.hpp"
 #include "ImGuiInjector/ImGuiInjector.hpp"
@@ -12,10 +15,7 @@
 #include "Features/Funny.hpp"
 #include "Features/Misc.hpp"
 #include "Features/AnalogInput.hpp"
-
-#ifndef NDEBUG
-#include "Features/MemoryTracker.hpp")
-#endif
+#include "Features/Numbers.hpp"
 
 #pragma comment(lib, "Helpers.lib")
 #pragma comment(lib, "ImGuiInjector.lib")
@@ -58,11 +58,13 @@ bool LR2HackBox::Hook() {
 	mFunny = new Funny();
 	mMisc = new Misc();
 	mAnalogInput = new AnalogInput();
+	mNumbers = new Numbers();
 
 	mUnrandomizer->Init(mModuleBase);
 	mFunny->Init(mModuleBase);
 	mMisc->Init(mModuleBase);
 	mAnalogInput->Init(mModuleBase);
+	mNumbers->Init(mModuleBase);
 
 	return true;
 }
@@ -72,12 +74,14 @@ bool LR2HackBox::Unhook() {
 	mFunny->Deinit();
 	mMisc->Deinit();
 	mAnalogInput->Deinit();
+	mNumbers->Deinit();
 	IFMEMORYTRACKER(mMemoryTracker->Deinit());
 	delete(mConfig);
 	delete(mUnrandomizer);
 	delete(mFunny);
 	delete(mMisc);
 	delete(mAnalogInput);
+	delete(mNumbers);
 	IFMEMORYTRACKER(delete(mMemoryTracker));
 	return true;
 }
@@ -93,6 +97,8 @@ void* LR2HackBox::GetSqlite() {
 }
 
 void LR2HackBoxMenu::Loop() {
+	IFSHOWIMGUIDEMO(if (mIsDemoMenu) ImGui::ShowDemoWindow(&mIsDemoMenu));
+
 	ImGui::Begin("LR2HackBox", &(LR2HackBoxMenu::mIsOpen));
 
 	ImGui::Text("LR2HackBox Menu");
@@ -101,6 +107,8 @@ void LR2HackBoxMenu::Loop() {
 
 	ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::CalcTextSize("Time running: 00:00:00").x - 15.f);
 	ImGui::Text("Time running: %02d:%02d:%02d", timeSinceInit.hours(), timeSinceInit.minutes(), timeSinceInit.seconds());
+
+	IFSHOWIMGUIDEMO(ImGui::Checkbox("Show Demo", &mIsDemoMenu));
 
 	if (ImGui::CollapsingHeader("Unrandomizer")) {
 		((Unrandomizer*)LR2HackBox::Get().mUnrandomizer)->Menu();
@@ -112,6 +120,10 @@ void LR2HackBoxMenu::Loop() {
 
 	if (ImGui::CollapsingHeader("Funny")) {
 		((Funny*)LR2HackBox::Get().mFunny)->Menu();
+	}
+
+	if (ImGui::CollapsingHeader("Numbers")) {
+		((Numbers*)LR2HackBox::Get().mNumbers)->Menu();
 	}
 
 	IFMEMORYTRACKER(

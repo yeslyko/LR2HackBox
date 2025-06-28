@@ -27,7 +27,7 @@ void Init() {
     try {
         LR2HackBox::Get().Hook();
     }
-    catch (std::exception err) {
+    catch (std::exception& err) {
         MessageBoxA(NULL, err.what(), "Error", MB_ICONERROR);
 
         exit(-1);

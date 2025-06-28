@@ -11,15 +11,20 @@
 
 #ifndef NDEBUG
 #define IFDEBUG(x) x
-//#define MEMORYTRACKER
 #else
 #define IFDEBUG(x)
 #endif
 
-#ifdef MEMORYTRACKER
+#if MEMORYTRACKER
 #define IFMEMORYTRACKER(x) x
 #else
 #define IFMEMORYTRACKER(x)
+#endif
+
+#if SHOWIMGUIDEMO
+#define IFSHOWIMGUIDEMO(x) x
+#else
+#define IFSHOWIMGUIDEMO(x)
 #endif
 
 class LR2HackBoxMenu : public ImGuiMenu {
@@ -32,6 +37,7 @@ private:
 	void BindingsMenu();
 
 	bool mIsRebindMenu = false;
+	IFSHOWIMGUIDEMO(bool mIsDemoMenu = false);
 
 	std::unordered_map<std::string, int> mMenuBindings;
 	std::pair<std::string, bool> mMenuBindingAwaitsRebind{ "NONE", false };
@@ -53,6 +59,7 @@ public:
 	ModFeature* mFunny = nullptr;
 	ModFeature* mMisc = nullptr;
 	ModFeature* mAnalogInput = nullptr;
+	ModFeature* mNumbers = nullptr;
 	IFMEMORYTRACKER(ModFeature* mMemoryTracker = nullptr);
 
 	ConfigManager* mConfig = nullptr;

@@ -9,6 +9,7 @@
 #include <Gdiplus.h>
 #include "LR2HackBox/LR2HackBox.hpp"
 #include "AnalogInput.hpp"
+#include "Numbers.hpp"
 
 #include "ImGuiInjector/ImGuiInjector.hpp"
 #include "safetyhook/safetyhook.hpp"
@@ -264,6 +265,7 @@ void Misc::OnPlayInit() {
 
 void Misc::OnSceneInitSwitch(SafetyHookContext& regs) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers);
 
 	switch (regs.eax) {
 	case 3:
@@ -271,6 +273,7 @@ void Misc::OnSceneInitSwitch(SafetyHookContext& regs) {
 		break;
 	case 4:
 		misc.OnPlayInit();
+		numbers.SceneInit();
 		break;
 	}
 }

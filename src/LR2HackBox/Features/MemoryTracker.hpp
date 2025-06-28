@@ -1,10 +1,11 @@
-#ifndef NDEBUG
 #include "BaseModels/ModFeature.hpp"
 
 #include "safetyhook/safetyhook.hpp"
 
 #include <stdint.h>
 #include <unordered_map>
+
+#define MEMORYTRACKER 0
 
 class MemoryTracker : public ModFeature {
 public:
@@ -22,4 +23,3 @@ private:
 	unsigned int mRefCount = 0;
 	std::unordered_map<void*, size_t> mAllocatedRef;
 };
-#endif

@@ -1,5 +1,5 @@
-﻿#ifdef MEMORYTRACKER
-#include "MemoryTracker.hpp"
+﻿#include "MemoryTracker.hpp"
+#if MEMORYTRACKER
 
 #include <iostream>
 #include <mutex>
