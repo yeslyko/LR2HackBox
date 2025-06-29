@@ -37,21 +37,22 @@ void Numbers::CalcJudgementSN(int lane, int keypress, int timing, int player, vo
 	if (gap <= game.gameplay.player[player].judgetime[5]) {
 		counter.pgreat++;
 		counter.noteCount++;
-		return;
 	}
-
-	if (gap <= game.gameplay.player[player].judgetime[4]) {
+	else if (gap <= game.gameplay.player[player].judgetime[4]) {
 		counter.great++;
 		counter.noteCount++;
+		isFast ? counter.fast++ : counter.slow++;
 	}
 	else if (gap <= game.gameplay.player[player].judgetime[3]) {
 		counter.good++;
 		counter.noteCount++;
+		isFast ? counter.fast++ : counter.slow++;
 	}
 	else if (gap <= game.gameplay.player[player].judgetime[2]) {
 		counter.bad++;
 		counter.cb++;
 		counter.noteCount++;
+		isFast ? counter.fast++ : counter.slow++;
 		LR2::NoteStruct* nextNote = game.gameplay.bmsobj_note[lane].note_count + multibadIndent < game.gameplay.bmsobj_note[lane].size ? &game.gameplay.bmsobj_note[lane].notes[game.gameplay.bmsobj_note[lane].note_count + multibadIndent] : nullptr;
 		if (nextNote != nullptr && std::abs(timing - (int)nextNote->realTiming) <= game.gameplay.player[player].judgetime[2]) {
 			CalcJudgementSN(lane, keypress, timing, player, nextNote, multibadIndent + 1);
@@ -59,9 +60,7 @@ void Numbers::CalcJudgementSN(int lane, int keypress, int timing, int player, vo
 	}
 	else if ((int)note.realTiming - timing < game.gameplay.player[player].judgetime[1]) {
 		counter.epoor++;
-		return;
 	}
-	isFast ? counter.fast++ : counter.slow++;
 }
 
 void Numbers::CalcJudgementLN(int lane, int keypress, int timing, int player, void* noteIn) {
@@ -87,23 +86,19 @@ void Numbers::CalcJudgementLN(int lane, int keypress, int timing, int player, vo
 		bool isFast = offset < 0;
 
 		if (gap <= game.gameplay.player[player].judgetime[5]) {
-			return;
+
 		}
 		else if (gap <= game.gameplay.player[player].judgetime[4]) {
 			isFast ? counter.fast++ : counter.slow++;
-			return;
 		}
 		else if (gap <= game.gameplay.player[player].judgetime[3]) {
 			isFast ? counter.fast++ : counter.slow++;
-			return;
 		}
 		else if (gap <= game.gameplay.player[player].judgetime[2]) {
 			isFast ? counter.fast++ : counter.slow++;
-			return;
 		}
 		else if ((int)note.realTiming - timing < game.gameplay.player[player].judgetime[1]) {
 			counter.epoor++;
-			return;
 		}
 		return;
 	}
