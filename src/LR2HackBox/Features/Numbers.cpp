@@ -234,71 +234,54 @@ static void HelpMarker(const char* desc) {
 }
 
 void Numbers::ColumnStatsMenu() {
-	ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_ScrollX;
+	constexpr const int judgeColumnSize = sizeof(JudgeCounter) / sizeof(int);
+	constexpr const char* notations[] = { "PGREAT:", " GREAT:", "  GOOD:", "   BAD:", "  POOR:", "E.POOR:", "  FAST:", "  SLOW:", "    CB:", "   EX%%:"};
+	static_assert(std::size(notations) == judgeColumnSize);
+	ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_ScrollX | ImGuiTableFlags_RowBg;
 	if (ImGui::BeginTable("JudgementCounterTable", mKeycount + 2, tableFlags))
 	{
-		ImGui::TableNextColumn();
-		ImGui::Text("PGREAT:");
-		ImGui::Text(" GREAT:");
-		ImGui::Text("  GOOD:");
-		ImGui::Text("   BAD:");
-		ImGui::Text("  POOR:");
-		ImGui::Text("E.POOR:");
-		ImGui::Text("  FAST:");
-		ImGui::Text("  SLOW:");
-		ImGui::Text("    CB:");
-		ImGui::Text("   EX%%:");
 		JudgeCounter total;
-		for (int columnIdx = 0; columnIdx < mKeycount; columnIdx++) {
-			if (mGuiMapping[columnIdx] == 0 || mGuiMapping[columnIdx] == 10) {
-				ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(189, 0, 0, 100), columnIdx + 1);
-			}
-			else {
-				if (mGuiMapping[columnIdx] % 2 == 0) {
-					ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(0, 0, 139, 100), columnIdx + 1);
+		for (int rowIdx = 0; rowIdx < judgeColumnSize; rowIdx++) {
+			ImGui::TableNextRow();
+			for (int columnIdx = 0; columnIdx < mKeycount + 2; columnIdx++) {
+				ImGui::TableNextColumn();
+
+				JudgeCounter& column = mJudgeCountColumns[mGuiMapping[columnIdx - 1]];
+				if (columnIdx == 0) {
+					ImGui::Text(notations[rowIdx]);
+				}
+				else if (columnIdx != mKeycount + 1) {
+					if (mGuiMapping[columnIdx - 1] == 0 || mGuiMapping[columnIdx - 1] == 10) {
+						ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(189, 0, 0, 100), columnIdx);
+					}
+					else {
+						if (mGuiMapping[columnIdx - 1] % 2 == 0) {
+							ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(0, 0, 139, 100), columnIdx);
+						}
+						else {
+							ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(230, 230, 230, 100), columnIdx);
+						}
+					}
+					if (rowIdx != judgeColumnSize - 1) {
+						ImGui::Text("%d", ((int*)&column)[rowIdx]);
+					}
+					else {
+						if (column.noteCount) ImGui::Text("%.2f", static_cast<float>(column.pgreat * 2 + column.great) / (column.noteCount * 2) * 100.f);
+						else ImGui::Text("%.2f", 100.f);
+					}
+					((int*)&total)[rowIdx] += ((int*)&column)[rowIdx];
 				}
 				else {
-					ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(230, 230, 230, 100), columnIdx + 1);
+					if (rowIdx != judgeColumnSize - 1) {
+						ImGui::Text("%d", ((int*)&total)[rowIdx]);
+					}
+					else {
+						if (total.noteCount) ImGui::Text("%.2f", static_cast<float>(total.pgreat * 2 + total.great) / (total.noteCount * 2) * 100.f);
+						else ImGui::Text("%.2f", 100.f);
+					}
 				}
 			}
-			JudgeCounter& column = mJudgeCountColumns[mGuiMapping[columnIdx]];
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", column.pgreat);
-			ImGui::Text("%d", column.great);
-			ImGui::Text("%d", column.good);
-			ImGui::Text("%d", column.bad);
-			ImGui::Text("%d", column.poor);
-			ImGui::Text("%d", column.epoor);
-			ImGui::Text("%d", column.fast);
-			ImGui::Text("%d", column.slow);
-			ImGui::Text("%d", column.cb);
-			if (column.noteCount) ImGui::Text("%.2f", static_cast<float>(column.pgreat * 2 + column.great) / (column.noteCount * 2) * 100.f);
-			else ImGui::Text("%.2f", 100.f);
-
-			total.pgreat += column.pgreat;
-			total.great += column.great;
-			total.good += column.good;
-			total.bad += column.bad;
-			total.poor += column.poor;
-			total.epoor += column.epoor;
-			total.fast += column.fast;
-			total.slow += column.slow;
-			total.cb += column.cb;
-			total.noteCount += column.noteCount;
 		}
-		ImGui::TableNextColumn();
-		ImGui::Text("%d", total.pgreat);
-		ImGui::Text("%d", total.great);
-		ImGui::Text("%d", total.good);
-		ImGui::Text("%d", total.bad);
-		ImGui::Text("%d", total.poor);
-		ImGui::Text("%d", total.epoor);
-		ImGui::Text("%d", total.fast);
-		ImGui::Text("%d", total.slow);
-		ImGui::Text("%d", total.cb);
-		if (total.noteCount) ImGui::Text("%.2f", static_cast<float>(total.pgreat * 2 + total.great) / (total.noteCount * 2) * 100.f);
-		else ImGui::Text("%.2f", 100.f);
-
 		ImGui::EndTable();
 	}
 }

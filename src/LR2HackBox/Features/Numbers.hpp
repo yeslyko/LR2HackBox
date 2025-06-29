@@ -23,6 +23,7 @@ public:
 	void SetOpenColumnStatsMenu(bool value);
 
 private:
+#pragma pack(push, 1)
 	struct JudgeCounter {
 		int pgreat = 0;
 		int great = 0;
@@ -35,6 +36,7 @@ private:
 		int cb = 0;
 		int noteCount = 0;
 	};
+#pragma pack(pop)
 	std::array<JudgeCounter, 20> mJudgeCountColumns = {};
 	std::vector<int> mGuiMapping = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
