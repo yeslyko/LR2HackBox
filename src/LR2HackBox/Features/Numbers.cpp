@@ -288,8 +288,10 @@ void Numbers::ColumnStatsMenu() {
 
 void Numbers::Menu() {
 	ImGui::Indent();
-
+	constexpr const char* columnStatsHelp = "This is a table with all the judgement statistics for each column individually. Coloured columns represent their respective columns, while right-most column is their total. Autoplay and Replay modes are currently unimplemented.";
 	if (ImGui::TreeNode("Per-Column Stats")) {
+		ImGui::SameLine();
+		HelpMarker(columnStatsHelp);
 		if (ImGui::Checkbox("P2 Scratch Side", &mIsP2Flip)) {
 			SetGuiMapping(mGuiMapping.data(), mKeymode, mIsP2Flip);
 			LR2HackBox::Get().mConfig->WriteValue("bColumnStatsP2", mIsP2Flip ? "true" : "false");
@@ -308,9 +310,10 @@ void Numbers::Menu() {
 		}
 		ImGui::TreePop();
 	}
-	ImGui::SameLine();
-	HelpMarker("This is a table with all the judgement statistics for each column individually. Coloured columns represent their respective columns, while right-most column is their total. Autoplay and Replay modes are currently unimplemented.");
-
+	else {
+		ImGui::SameLine();
+		HelpMarker(columnStatsHelp);
+	}
 	ImGui::Unindent();
 }
 
