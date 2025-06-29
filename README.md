@@ -22,3 +22,5 @@ Features:
 - Metronome – Enables the metronome sound in playing scene. SFX can be customized with 'metronome-beat.wav' and 'metronome-measure' in 'LR2files\Sound\LR2HackBox\' directory for respective sounds. If those files are not present, it will default to using samples for closing and opening (in that order) a folder.
 - Autoadjust Clamp – Clamps the autoadjust to the specified value range, not allowing it to adjust below min and above max values.
 - Autoadjust Reset – Adds new type for autoadjust, which can be selected through settings menu of the game. It's called 'RESET', and after each play it resets the adjust to value before you started playing.
+- Per-Column Stats Tracker – Tracks play judgement statistics for each column individually, inspired by similar feature in newer versions of "Simply Love" theme of StepMania.
+
