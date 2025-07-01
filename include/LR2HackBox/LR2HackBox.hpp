@@ -65,6 +65,9 @@ public:
 	ConfigManager* mConfig = nullptr;
 
 	std::chrono::system_clock::time_point mInitTime;
+	bool mVerCheckFin = false;
+	bool mVerCheckSucc = false;
+	bool mIsLastVer = false;
 private:
 	LR2HackBox() = default;
 	~LR2HackBox() = default;

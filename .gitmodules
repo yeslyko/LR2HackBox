@@ -13,3 +13,9 @@
 [submodule "ext/StackWalker"]
 	path = ext/StackWalker
 	url = git@github.com:JochenKalmbach/StackWalker.git
+[submodule "ext/json"]
+	path = ext/json
+	url = git@github.com:nlohmann/json.git
+[submodule "ext/PicoSHA2"]
+	path = ext/PicoSHA2
+	url = git@github.com:okdshin/PicoSHA2.git

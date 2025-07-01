@@ -39,6 +39,9 @@
     <ClInclude Include="Features\Numbers.hpp">
       <Filter>Header Files\Features</Filter>
     </ClInclude>
+    <ClInclude Include="Features\Version.hpp">
+      <Filter>Header Files\Features</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LR2HackBox.cpp">
@@ -60,6 +63,9 @@
       <Filter>Source Files\Features</Filter>
     </ClCompile>
     <ClCompile Include="Features\Numbers.cpp">
+      <Filter>Source Files\Features</Filter>
+    </ClCompile>
+    <ClCompile Include="Features\Version.cpp">
       <Filter>Source Files\Features</Filter>
     </ClCompile>
   </ItemGroup>

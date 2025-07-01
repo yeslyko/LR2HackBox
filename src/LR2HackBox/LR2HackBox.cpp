@@ -16,6 +16,7 @@
 #include "Features/Misc.hpp"
 #include "Features/AnalogInput.hpp"
 #include "Features/Numbers.hpp"
+#include "Features/Version.hpp"
 
 #pragma comment(lib, "Helpers.lib")
 #pragma comment(lib, "ImGuiInjector.lib")
@@ -35,6 +36,16 @@ LR2HackBox& LR2HackBox::Get() {
 
 bool LR2HackBox::Hook() {
 	mLogger.SetPath("./LR2HackBox.log");
+
+	std::thread([&] {
+		Version::Status version = Version::Check();
+		if (version.success) {
+			mIsLastVer = version.isLast;
+			mVerCheckSucc = version.success;
+		}
+		mVerCheckFin = true;
+		}
+	).detach();
 
 	MH_Initialize();
 
@@ -100,6 +111,22 @@ void LR2HackBoxMenu::Loop() {
 	IFSHOWIMGUIDEMO(if (mIsDemoMenu) ImGui::ShowDemoWindow(&mIsDemoMenu));
 
 	ImGui::Begin("LR2HackBox", &(LR2HackBoxMenu::mIsOpen));
+
+	if (!LR2HackBox::Get().mVerCheckFin) {
+		ImGui::Text("Checking version...");
+	}
+	else {
+		if (LR2HackBox::Get().mVerCheckSucc) {
+			if (!LR2HackBox::Get().mIsLastVer) {
+				ImGui::Text("New update available");
+				ImGui::SameLine();
+				ImGui::TextLinkOpenURL("here", "https://github.com/MatVeiQaaa/LR2HackBox/releases/tag/latest");
+			}
+		}
+		else {
+			ImGui::Text("Coulnd't check version!");
+		}
+	}
 
 	ImGui::Text("LR2HackBox Menu");
 
