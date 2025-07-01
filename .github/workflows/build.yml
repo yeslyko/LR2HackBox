@@ -19,6 +19,10 @@ jobs:
       - name: Set up msbuild
         uses: microsoft/setup-msbuild@v2
         
+      - name: Integrate vcpkg
+        run: |
+            vcpkg integrate install
+        
       - name: Build with msbuild
         run: |
           msbuild LR2HackBox.sln /t:Build /p:Configuration=Release /p:Platform=x86
