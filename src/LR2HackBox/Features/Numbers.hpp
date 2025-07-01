@@ -21,6 +21,7 @@ public:
 	void SceneInit();
 	void ColumnStatsMenu();
 	void SetOpenColumnStatsMenu(bool value);
+	void ToggleColumnStatsMenu();
 
 private:
 #pragma pack(push, 1)

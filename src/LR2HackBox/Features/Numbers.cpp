@@ -299,7 +299,7 @@ void Numbers::Menu() {
 			mColumnStatsMenu.SetOpen(mIsWindow);
 		}
 		ImGui::SameLine();
-		HelpMarker("Bring the table to a separate independent window, which remains open until this is toggled again, or an 'X' button is pressed in the top-right corner of that window. Useful to observe these stats during gameplay.");
+		HelpMarker("Bring the table to a separate independent window, which remains open until this is toggled again, or an 'X' button is pressed in the top-right corner of that window. Useful to observe these stats during gameplay. This feature can be bound to a key in 'Binds' menu.");
 		if (!mIsWindow) {
 			ColumnStatsMenu();
 		}
@@ -314,6 +314,11 @@ void Numbers::Menu() {
 
 void Numbers::SetOpenColumnStatsMenu(bool value) {
 	mIsWindow = value;
+}
+
+void Numbers::ToggleColumnStatsMenu() {
+	mColumnStatsMenu.ToggleOpen();
+	mIsWindow = mColumnStatsMenu.IsOpen();
 }
 
 void ColumnStatsMenu::Loop() {

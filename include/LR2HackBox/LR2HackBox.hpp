@@ -35,11 +35,18 @@ public:
 	void InitBindings();
 private:
 	void BindingsMenu();
+	static int LoadBind(const char* name, int defaultVKey = 0);
+	static void SetBind(const char* name, int vKey);
 
 	bool mIsRebindMenu = false;
 	IFSHOWIMGUIDEMO(bool mIsDemoMenu = false);
 
-	std::unordered_map<std::string, int> mMenuBindings;
+	struct Binding {
+		int vKey = 0;
+		bool essential = false;
+	};
+
+	std::unordered_map<std::string, Binding> mMenuBindings;
 	std::pair<std::string, bool> mMenuBindingAwaitsRebind{ "NONE", false };
 };
 

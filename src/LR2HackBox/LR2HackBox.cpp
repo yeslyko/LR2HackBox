@@ -192,13 +192,15 @@ void LR2HackBoxMenu::BindingsMenu() {
 	for (auto& binding : mMenuBindings) {
 		ImGui::Text(binding.first.c_str());
 		ImGui::SameLine();
-		std::string keycodeName;
-		WORD vkeyChar = LOWORD(MapVirtualKey(binding.second, MAPVK_VK_TO_CHAR));
-		if (vkeyChar) {
-			keycodeName = vkeyChar;
-		}
-		else {
-			keycodeName = std::string("VK_") + std::to_string(binding.second);
+		std::string keycodeName = "NONE";
+		if (binding.second.vKey) {
+			WORD vkeyChar = LOWORD(MapVirtualKey(binding.second.vKey, MAPVK_VK_TO_CHAR));
+			if (vkeyChar) {
+				keycodeName = vkeyChar;
+			}
+			else {
+				keycodeName = std::string("VK_") + std::to_string(binding.second.vKey);
+			}
 		}
 
 		if (mMenuBindingAwaitsRebind.first == binding.first) {
@@ -213,38 +215,77 @@ void LR2HackBoxMenu::BindingsMenu() {
 			mMenuBindingAwaitsRebind = { binding.first, true };
 		}
 		ImGui::PopStyleColor(2);
+		if (mMenuBindingAwaitsRebind.first == binding.first && !binding.second.essential) {
+			ImGui::SameLine();
+			if (ImGui::Button("Remove", ImVec2(0, 23))) {
+				SetBind(binding.first.c_str(), 0);
+				mMenuBindingAwaitsRebind = { "NONE", false };
+			}
+		}
 	}
 	if (mMenuBindingAwaitsRebind.second) ImGui::SetNextFrameWantCaptureKeyboard(true);
 
 	ImGui::End();
 }
 
-void LR2HackBoxMenu::InitBindings() {
+int LR2HackBoxMenu::LoadBind(const char* name, int defaultVKey) {
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
-	if (!config.ValueExists("iBindMenuOpen")) {
-		config.WriteValue("iBindMenuOpen", std::to_string(VK_INSERT));
-		config.SaveConfig();
+	int key = defaultVKey;
+	if (defaultVKey) {
+		if (!config.ValueExists(name)) {
+			config.WriteValue(name, std::to_string(defaultVKey));
+			config.SaveConfig();
+		}
+		else {
+			try {
+				key = std::stoi(config.ReadValue(name));
+			}
+			catch (...) {
+				config.WriteValue(name, std::to_string(defaultVKey));
+				config.SaveConfig();
+			}
+		}
 	}
-	mMenuBindings["Menu Open"] = std::stoi(config.ReadValue("iBindMenuOpen"));
+	else {
+		try {
+			key = std::stoi(config.ReadValue(name));
+		}
+		catch (...) {
+
+		}
+	}
+	return key;
+}
+
+void LR2HackBoxMenu::SetBind(const char* name, int vKey) {
+	LR2HackBoxMenu& menu = LR2HackBox::Get().mMenu;
+	menu.mMenuBindings[name].vKey = vKey;
+
+	ConfigManager& config = *LR2HackBox::Get().mConfig;
+	std::string configEntry = name;
+	configEntry.erase(std::remove_if(configEntry.begin(), configEntry.end(), isspace), configEntry.end());
+	configEntry = "iBind" + configEntry;
+	config.WriteValue(configEntry, std::to_string(vKey));
+	config.SaveConfig();
+}
+
+void LR2HackBoxMenu::InitBindings() {
+	mMenuBindings["Menu Open"] = Binding(LoadBind("iBindMenuOpen", VK_INSERT), true);
+	mMenuBindings["Stats Open"] = Binding(LoadBind("iBindStatsOpen"), false);
 }
 
 void LR2HackBoxMenu::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	switch (msg) {
 	case WM_KEYDOWN: {
-		if (wParam == mMenuBindings["Menu Open"]) {
+		if (wParam == mMenuBindings["Menu Open"].vKey) {
 			LR2HackBoxMenu::ToggleOpen();
+		}
+		else if (wParam == mMenuBindings["Stats Open"].vKey) {
+			((Numbers*)LR2HackBox::Get().mNumbers)->ToggleColumnStatsMenu();
 		}
 
 		if (mMenuBindingAwaitsRebind.second) {
-			mMenuBindings[mMenuBindingAwaitsRebind.first] = wParam;
-
-			ConfigManager& config = *LR2HackBox::Get().mConfig;
-			std::string configEntry = mMenuBindingAwaitsRebind.first;
-			configEntry.erase(std::remove_if(configEntry.begin(), configEntry.end(), isspace), configEntry.end());
-			configEntry = "iBind" + configEntry;
-			config.WriteValue(configEntry, std::to_string(wParam));
-			config.SaveConfig();
-
+			SetBind(mMenuBindingAwaitsRebind.first.c_str(), wParam);
 			mMenuBindingAwaitsRebind = { "NONE", false };
 		}
 		break;
