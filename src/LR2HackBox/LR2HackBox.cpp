@@ -190,6 +190,7 @@ void LR2HackBoxMenu::BindingsMenu() {
 	ImGui::Begin("Rebind Buttons", &mIsRebindMenu);
 	ImGui::SetWindowFocus();
 	for (auto& binding : mMenuBindings) {
+		ImGui::PushID(binding.first.c_str());
 		ImGui::Text(binding.first.c_str());
 		ImGui::SameLine();
 		std::string keycodeName = "NONE";
@@ -222,6 +223,7 @@ void LR2HackBoxMenu::BindingsMenu() {
 				mMenuBindingAwaitsRebind = { "NONE", false };
 			}
 		}
+		ImGui::PopID();
 	}
 	if (mMenuBindingAwaitsRebind.second) ImGui::SetNextFrameWantCaptureKeyboard(true);
 
@@ -280,7 +282,7 @@ void LR2HackBoxMenu::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM l
 		if (wParam == mMenuBindings["Menu Open"].vKey) {
 			LR2HackBoxMenu::ToggleOpen();
 		}
-		else if (wParam == mMenuBindings["Stats Open"].vKey) {
+		if (wParam == mMenuBindings["Stats Open"].vKey) {
 			((Numbers*)LR2HackBox::Get().mNumbers)->ToggleColumnStatsMenu();
 		}
 
