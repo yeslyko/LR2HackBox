@@ -57,6 +57,10 @@ public:
 	bool Hook();
 	bool Unhook();
 
+	void LoadConfig();
+	void SettingsMenu();
+	void StartVersionCheck();
+
 	LR2::game* GetGame();
 	void* GetSqlite();
 
@@ -75,9 +79,14 @@ public:
 	bool mVerCheckFin = false;
 	bool mVerCheckSucc = false;
 	bool mIsLastVer = false;
+	bool mIsCheckUpdate = true;
+
+	float mGlobalScale = 1.f;
+
 private:
 	LR2HackBox() = default;
 	~LR2HackBox() = default;
 	LR2HackBox(const LR2HackBox&) = delete;
 	LR2HackBox& operator=(const LR2HackBox&) = delete;
+
 };

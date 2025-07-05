@@ -1,6 +1,7 @@
 #include <vector>
 #include <windows.h>
 #include "BaseModels/ImGuiMenu.hpp"
+#include <imgui/imgui.h>
 
 class ImGuiInjector {
 public:
@@ -18,6 +19,9 @@ public:
 	void ResetInput();
 	void UpdateInput();
 	void LoadJapaneseFont();
+	void SetStartingStyle(const ImGuiStyle& style);
+	void SetGlobalScale(float scale);
+	void UpdateGlobalScale();
 private:
 	ImGuiInjector();
 	~ImGuiInjector() = default;
@@ -33,6 +37,10 @@ private:
 	HWND mWindowHandle = NULL;
 	LONG_PTR mWndProcPtr = NULL;
 	WNDPROC mPreviousWndProc = nullptr;
+
+	ImGuiStyle mStartingStyle;
+	float mGlobalScale = 1.f;
+	bool mScaleChanged = false;
 
 	std::vector<ImGuiMenu*> mMenus;
 };

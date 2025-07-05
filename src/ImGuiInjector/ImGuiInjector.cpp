@@ -280,3 +280,52 @@ void ImGuiInjector::LoadJapaneseFont() {
         std::cout << "Couldn't load font at path C:\\Windows\\Fonts\\msgothic.ttc" << std::endl;
     }
 }
+
+void ImGuiInjector::SetStartingStyle(const ImGuiStyle& style) {
+    mStartingStyle = style;
+}
+
+void ImGuiInjector::UpdateGlobalScale() {
+    if (!mScaleChanged) return;
+    ImGuiStyle& style = ImGui::GetStyle();
+    ImGuiStyle tmpStyle = mStartingStyle;
+    tmpStyle.ScaleAllSizes(mGlobalScale);
+    tmpStyle.FontScaleMain = mGlobalScale;
+    tmpStyle.MouseCursorScale = mGlobalScale;
+
+    style.WindowPadding = tmpStyle.WindowPadding;
+    style.WindowRounding = tmpStyle.WindowRounding;
+    style.WindowMinSize = tmpStyle.WindowMinSize;
+    style.WindowBorderHoverPadding = tmpStyle.WindowBorderHoverPadding;
+    style.ChildRounding = tmpStyle.ChildRounding;
+    style.PopupRounding = tmpStyle.PopupRounding;
+    style.FramePadding = tmpStyle.FramePadding;
+    style.FrameRounding = tmpStyle.FrameRounding;
+    style.ItemSpacing = tmpStyle.ItemSpacing;
+    style.ItemInnerSpacing = tmpStyle.ItemInnerSpacing;
+    style.CellPadding = tmpStyle.CellPadding;
+    style.TouchExtraPadding = tmpStyle.TouchExtraPadding;
+    style.IndentSpacing = tmpStyle.IndentSpacing;
+    style.ColumnsMinSpacing = tmpStyle.ColumnsMinSpacing;
+    style.ScrollbarSize = tmpStyle.ScrollbarSize;
+    style.ScrollbarRounding = tmpStyle.ScrollbarRounding;
+    style.GrabMinSize = tmpStyle.GrabMinSize;
+    style.GrabRounding = tmpStyle.GrabRounding;
+    style.LogSliderDeadzone = tmpStyle.LogSliderDeadzone;
+    style.ImageBorderSize = tmpStyle.ImageBorderSize;
+    style.TabRounding = tmpStyle.TabRounding;
+    style.TabCloseButtonMinWidthSelected = tmpStyle.TabCloseButtonMinWidthSelected;
+    style.TabCloseButtonMinWidthUnselected = tmpStyle.TabCloseButtonMinWidthUnselected;
+    style.TabBarOverlineSize = tmpStyle.TabBarOverlineSize;
+    style.TreeLinesRounding = tmpStyle.TreeLinesRounding;
+    style.SeparatorTextPadding = tmpStyle.SeparatorTextPadding;
+    style.DisplayWindowPadding = tmpStyle.DisplayWindowPadding;
+    style.DisplaySafeAreaPadding = tmpStyle.DisplaySafeAreaPadding;
+    style.MouseCursorScale = tmpStyle.MouseCursorScale;
+    style.FontScaleMain = tmpStyle.FontScaleMain;
+}
+
+void ImGuiInjector::SetGlobalScale(float scale) {
+    mScaleChanged = mGlobalScale != scale;
+    mGlobalScale = scale;
+}

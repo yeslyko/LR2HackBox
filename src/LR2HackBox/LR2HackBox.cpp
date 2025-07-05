@@ -37,15 +37,13 @@ LR2HackBox& LR2HackBox::Get() {
 bool LR2HackBox::Hook() {
 	mLogger.SetPath("./LR2HackBox.log");
 
-	std::thread([&] {
-		Version::Status version = Version::Check();
-		if (version.success) {
-			mIsLastVer = version.isLast;
-			mVerCheckSucc = version.success;
-		}
-		mVerCheckFin = true;
-		}
-	).detach();
+	mConfig = new ConfigManager("LR2HackBox.ini");
+
+	LoadConfig();
+
+	if (mIsCheckUpdate) {
+		StartVersionCheck();
+	}
 
 	MH_Initialize();
 
@@ -58,10 +56,10 @@ bool LR2HackBox::Hook() {
 	mInitTime = std::chrono::system_clock::now();
 
 	ImGuiInjector::Get().AddMenu(&(LR2HackBox::mMenu));
+
+	ImGuiInjector::Get().SetGlobalScale(mGlobalScale);
 	
 	mModuleBase = (uintptr_t)GetModuleHandle(NULL);
-
-	mConfig = new ConfigManager("LR2HackBox.ini");
 
 	mMenu.InitBindings();
 
@@ -107,24 +105,70 @@ void* LR2HackBox::GetSqlite() {
 	return LR2::pSqlite;
 }
 
+void LR2HackBox::StartVersionCheck() {
+	if (mVerCheckFin) return;
+	std::thread([&] {
+		Version::Status version = Version::Check();
+		if (version.success) {
+			mIsLastVer = version.isLast;
+			mVerCheckSucc = version.success;
+		}
+		mVerCheckFin = true;
+		}
+	).detach();
+}
+
+void LR2HackBox::LoadConfig() {
+	mIsCheckUpdate = mConfig->ReadValue("bCheckUpdate") == "" ? true : mConfig->ReadValue("bCheckUpdate") == "true" ? true : false;
+	try {
+		mGlobalScale = std::stof(mConfig->ReadValue("fGlobalScale"));
+	}
+	catch (...) {}
+}
+
+void LR2HackBox::SettingsMenu() {
+	ImGui::Indent();
+	ImGui::SetNextItemWidth(200.f);
+	ImGui::SliderFloat("Interface scale", &mGlobalScale, 0.5f, 2.f, "%.2f");
+	ImGui::SameLine();
+	if (ImGui::Button("Apply")) {
+		ImGuiInjector::Get().SetGlobalScale(mGlobalScale);
+		mConfig->WriteValue("fGlobalScale", std::to_string(mGlobalScale));
+		mConfig->SaveConfig();
+	}
+
+	if (ImGui::Checkbox("Update Notification", &mIsCheckUpdate)) {
+		ConfigManager& config = *LR2HackBox::Get().mConfig;
+		config.WriteValue("bCheckUpdate", mIsCheckUpdate ? "true" : "false");
+		config.SaveConfig();
+
+		if (mIsCheckUpdate) {
+			StartVersionCheck();
+		}
+	}
+	ImGui::Unindent();
+}
+
 void LR2HackBoxMenu::Loop() {
 	IFSHOWIMGUIDEMO(if (mIsDemoMenu) ImGui::ShowDemoWindow(&mIsDemoMenu));
 
 	ImGui::Begin("LR2HackBox", &(LR2HackBoxMenu::mIsOpen));
 
-	if (!LR2HackBox::Get().mVerCheckFin) {
-		ImGui::Text("Checking version...");
-	}
-	else {
-		if (LR2HackBox::Get().mVerCheckSucc) {
-			if (!LR2HackBox::Get().mIsLastVer) {
-				ImGui::Text("New update available");
-				ImGui::SameLine();
-				ImGui::TextLinkOpenURL("here", "https://github.com/MatVeiQaaa/LR2HackBox/releases/tag/latest");
-			}
+	if (LR2HackBox::Get().mIsCheckUpdate) {
+		if (!LR2HackBox::Get().mVerCheckFin) {
+			ImGui::Text("Checking version...");
 		}
 		else {
-			ImGui::Text("Coulnd't check version!");
+			if (LR2HackBox::Get().mVerCheckSucc) {
+				if (!LR2HackBox::Get().mIsLastVer) {
+					ImGui::Text("New update available");
+					ImGui::SameLine();
+					ImGui::TextLinkOpenURL("here", "https://github.com/MatVeiQaaa/LR2HackBox/releases/tag/latest");
+				}
+			}
+			else {
+				ImGui::Text("Coulnd't check version!");
+			}
 		}
 	}
 
@@ -151,6 +195,10 @@ void LR2HackBoxMenu::Loop() {
 
 	if (ImGui::CollapsingHeader("Numbers")) {
 		((Numbers*)LR2HackBox::Get().mNumbers)->Menu();
+	}
+
+	if (ImGui::CollapsingHeader("Settings")) {
+		LR2HackBox::Get().SettingsMenu();
 	}
 
 	IFMEMORYTRACKER(
