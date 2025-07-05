@@ -287,6 +287,7 @@ void ImGuiInjector::SetStartingStyle(const ImGuiStyle& style) {
 
 void ImGuiInjector::UpdateGlobalScale() {
     if (!mScaleChanged) return;
+    mScaleChanged = false;
     ImGuiStyle& style = ImGui::GetStyle();
     ImGuiStyle tmpStyle = mStartingStyle;
     tmpStyle.ScaleAllSizes(mGlobalScale);
