@@ -25,7 +25,7 @@ void Init() {
     std::cout << "ModuleHandle: " << std::hex << ModuleHandle << std::endl;
 
     try {
-        LR2HackBox::Get().Hook();
+       LR2HackBox::Get().Hook();
     }
     catch (std::exception& err) {
         MessageBoxA(NULL, err.what(), "Error", MB_ICONERROR);
@@ -50,6 +50,7 @@ BOOL APIENTRY DllMain(
         while (!IsDebuggerPresent())
             Sleep(100);
 #endif
+        LR2::Init();
         std::thread(Init).detach();
 
         break;

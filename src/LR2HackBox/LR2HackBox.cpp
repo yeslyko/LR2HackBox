@@ -50,7 +50,6 @@ bool LR2HackBox::Hook() {
 	IFMEMORYTRACKER(mMemoryTracker = new MemoryTracker());
 	IFMEMORYTRACKER(mMemoryTracker->Init(mModuleBase));
 
-	LR2::Init();
 	while (!LR2::isInit) Sleep(1);
 
 	mInitTime = std::chrono::system_clock::now();
