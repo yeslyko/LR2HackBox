@@ -50,12 +50,12 @@ void Misc::OnSetRetryFlag(SafetyHookContext& regs) {
 }
 
 static void PreventKeysoundLeakOnPlayInit() {
-	char* flag = (char*)0x4B0832;
+	char* flag = (char*)0x4B0830;
 	DWORD oldProtection = 0;
-	BOOL hResult = VirtualProtect(flag, sizeof(char), PAGE_READWRITE, &oldProtection);
-	*flag = 1; // for (int i = 0; i < 1296; i++) gp->keysound[i].load = 0 -> 1; @LR2input.cpp1404
+	BOOL hResult = VirtualProtect(flag, 3, PAGE_EXECUTE_READWRITE, &oldProtection);
+	memset(flag, 0x90, 3); // for (int i = 0; i < 1296; i++) gp->keysound[i].load = 0 -> 1; @LR2input.cpp1404
 	DWORD discard = 0;
-	VirtualProtect(flag, sizeof(char), oldProtection, &discard);
+	VirtualProtect(flag, 3, oldProtection, &discard);
 }
 
 static void StopKeysounds() {
@@ -784,7 +784,7 @@ bool Misc::Init(uintptr_t moduleBase) {
 	((AnalogInput*)LR2HackBox::Get().mAnalogInput)->SetEnabled(mIsAnalogInput);
 	MirrorGearshift(mIsMirrorGearshift);
 	SetAutoadjustReset(mIsAutoadjustReset);
-	PreventKeysoundLeakOnPlayInit();
+	//PreventKeysoundLeakOnPlayInit();
 
 	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x9573), OnSetRetryFlag));
 	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x0198C1), OnPlayISetSelecter));
