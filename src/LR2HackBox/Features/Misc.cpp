@@ -53,7 +53,7 @@ static void PreventKeysoundLeakOnPlayInit() {
 	char* flag = (char*)0x4B0830;
 	DWORD oldProtection = 0;
 	BOOL hResult = VirtualProtect(flag, 3, PAGE_EXECUTE_READWRITE, &oldProtection);
-	memset(flag, 0x90, 3); // for (int i = 0; i < 1296; i++) gp->keysound[i].load = 0 -> 1; @LR2input.cpp1404
+	memset(flag, 0x90, 3); // for (int i = 0; i < 1296; i++) gp->keysound[i].load = 0; @LR2input.cpp1404
 	DWORD discard = 0;
 	VirtualProtect(flag, 3, oldProtection, &discard);
 }
@@ -68,8 +68,8 @@ static void StopKeysounds() {
 	}
 }
 
-static LR2::SOUNDDATA metronomeMeasureFx;
-static LR2::SOUNDDATA metronomeBeatFx;
+static LR2::SOUNDDATA* metronomeMeasureFx;
+static LR2::SOUNDDATA* metronomeBeatFx;
 
 void Misc::OnPlayISetSelecter(SafetyHookContext& regs) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
@@ -81,8 +81,8 @@ void Misc::OnPlayISetSelecter(SafetyHookContext& regs) {
 	typedef int(__cdecl* tReleaseSound)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound);
 	tReleaseSound ReleaseSound = (tReleaseSound)0x4B8040;
 
-	ReleaseSound(&game.audio, &metronomeMeasureFx);
-	ReleaseSound(&game.audio, &metronomeBeatFx);
+	ReleaseSound(&game.audio, metronomeMeasureFx);
+	ReleaseSound(&game.audio, metronomeBeatFx);
 
 	if (!misc.mIsRetryTweaks) return;
 
@@ -267,8 +267,8 @@ void Misc::OnPlayInit() {
 		typedef int(__cdecl* tLoadSound)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound, LR2::CSTR filepath, int loop, int disableDSP, int previewFlag);
 		tLoadSound LoadSound = (tLoadSound)0x4B8BB0;
 
-		LoadSound(&game.audio, &metronomeMeasureFx, LR2::CSTR("LR2files\\Sound\\LR2HackBox\\metronome-measure.wav"), 0, game.config.sound.disabledsp, 0);
-		LoadSound(&game.audio, &metronomeBeatFx, LR2::CSTR("LR2files\\Sound\\LR2HackBox\\metronome-beat.wav"), 0, game.config.sound.disabledsp, 0);
+		LoadSound(&game.audio, metronomeMeasureFx, LR2::CSTR("LR2files\\Sound\\LR2HackBox\\metronome-measure.wav"), 0, game.config.sound.disabledsp, 0);
+		LoadSound(&game.audio, metronomeBeatFx, LR2::CSTR("LR2files\\Sound\\LR2HackBox\\metronome-beat.wav"), 0, game.config.sound.disabledsp, 0);
 	}
 }
 
@@ -471,11 +471,11 @@ void Misc::OnDrawNotesGetSongtimer(SafetyHookContext& regs) {
 	if (currentBeat != misc.mMetronomeLastPlayedBeat) {
 		misc.mMetronomeLastPlayedBeat = currentBeat;
 		if (currentBeat == 0) {
-			LR2::SOUNDDATA* sfx = metronomeBeatFx.load == 1 ? &metronomeMeasureFx : &game.audio.sysSound.folder_open;
+			LR2::SOUNDDATA* sfx = metronomeBeatFx->load == 1 ? metronomeMeasureFx : &game.audio.sysSound.folder_open;
 			GamePlaySound(&game.audio, sfx, game.audio.chnBgm, -1);
 		}
 		else {
-			LR2::SOUNDDATA* sfx = metronomeBeatFx.load == 1 ? &metronomeBeatFx : &game.audio.sysSound.folder_close;
+			LR2::SOUNDDATA* sfx = metronomeBeatFx->load == 1 ? metronomeBeatFx : &game.audio.sysSound.folder_close;
 			GamePlaySound(&game.audio, sfx, game.audio.chnBgm, -1);
 		}
 	}
@@ -751,6 +751,7 @@ void Misc::SetAutoadjustReset(bool enable) {
 typedef int(__cdecl* tSetObjectString)(unsigned int num, LR2::CSTR string, LR2::CSTR* objectList);
 tSetObjectString SetObjectString = (tSetObjectString)0x4B6C40;
 int Misc::OnSetObjectString(unsigned int num, void* string, void** objectList) {
+	if (!LR2HackBox::Get().GetGame()) return SetObjectString(num, (LR2::CSTR&)string, (LR2::CSTR*)objectList);
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 	if (num == 80 && game.config.play.autojudge == 3) {
 		return SetObjectString(80, "RESET", game.txtStruct.objectStr);
@@ -758,9 +759,70 @@ int Misc::OnSetObjectString(unsigned int num, void* string, void** objectList) {
 	return SetObjectString(num, (LR2::CSTR&)string, (LR2::CSTR*)objectList);
 }
 
+safetyhook::InlineHook oSetFirstSkins;
+int Misc::OnSetFirstSkins(void* g) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	if (!misc.mIsCourseResultFix) return oSetFirstSkins.ccall<int>(g);
+
+	LR2::game& game = *(LR2::game*)g;
+	void* hXml = malloc(0x48);
+	typedef void*(__thiscall* tTiXmlDocumentCtor)(void* pThis, const char* filename);
+	tTiXmlDocumentCtor TiXmlDocumentCtor = (tTiXmlDocumentCtor)0x4C2FE0;
+	void* resul1 = TiXmlDocumentCtor(hXml, "LR2files\\Config\\config.xml");
+	typedef void(__thiscall* tTiXmlDocumentDtor)(void* pThis, int flag);
+	tTiXmlDocumentDtor TiXmlDocumentDtor = (tTiXmlDocumentDtor)(**(tTiXmlDocumentDtor**)hXml);
+	typedef bool(__thiscall* tTiXmlDocumentLoadFile)(void* pThis, int encoding);
+	tTiXmlDocumentLoadFile TiXmlDocumentLoadFile = (tTiXmlDocumentLoadFile)0x4C4150;
+	bool result2 = TiXmlDocumentLoadFile(hXml, 0);
+	typedef int(__cdecl* tReadXml_Str)(const char* level1, const char* level2, const char* level3, const LR2::CSTR initvalue, LR2::CSTR* oBuf, void* xmlData);
+	tReadXml_Str ReadXml_Str = (tReadXml_Str)0x43C0E0;
+	ReadXml_Str("config", "skin", "courseresult", "", &game.config.skin.skinFilePath[15], hXml);
+
+	TiXmlDocumentDtor(hXml, 1);
+	free(hXml);
+
+	return oSetFirstSkins.ccall<int>(g);
+}
+
+void Misc::OnWriteConfigXml(SafetyHookContext& regs) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	if (!misc.mIsCourseResultFix) return;
+
+	LR2::game& game = *LR2HackBox::Get().GetGame();
+
+	FILE* pFile = (FILE*)regs.esi;
+	typedef void(__cdecl* tWriteXML_Tab2Str)(FILE* hFile, const char* tag, LR2::CSTR str);
+	tWriteXML_Tab2Str WriteXML_Tab2Str = (tWriteXML_Tab2Str)0x43CF50;
+	WriteXML_Tab2Str(pFile, "courseresult", game.config.skin.skinFilePath[15]);
+}
+
+bool Misc::EarlyInit(uintptr_t moduleBase) {
+	Misc::mModuleBase = moduleBase;
+
+	LoadConfig();
+	SetHooks();
+
+	return true;
+}
+
 bool Misc::Init(uintptr_t moduleBase) {
 	Misc::mModuleBase = moduleBase;
 
+	PreventKeysoundLeakOnPlayInit();
+
+	metronomeBeatFx = new LR2::SOUNDDATA();
+	metronomeMeasureFx = new LR2::SOUNDDATA();
+
+	return true;
+}
+
+bool Misc::Deinit() {
+	delete(metronomeBeatFx);
+	delete(metronomeMeasureFx);
+	return true;
+}
+
+void Misc::LoadConfig() {
 	mIsRetryTweaks = LR2HackBox::Get().mConfig->ReadValue("bRetryTweaks") == "true" ? true : false;
 	mIsRandomSelect = LR2HackBox::Get().mConfig->ReadValue("bRandomSelect") == "true" ? true : false;
 	mIsMainBPM = LR2HackBox::Get().mConfig->ReadValue("bMainBPM") == "true" ? true : false;
@@ -771,6 +833,7 @@ bool Misc::Init(uintptr_t moduleBase) {
 	mIsLNAnimFix = LR2HackBox::Get().mConfig->ReadValue("bLNAnimFix") == "true" ? true : false;
 	mIsAutoadjustClamp = LR2HackBox::Get().mConfig->ReadValue("bAutoadjustClamp") == "true" ? true : false;
 	mIsAutoadjustReset = LR2HackBox::Get().mConfig->ReadValue("bAutoadjustReset") == "true" ? true : false;
+	mIsCourseResultFix = LR2HackBox::Get().mConfig->ReadValue("bCourseResultFix") == "true" ? true : false;
 
 	try {
 		mAutoadjustClampMin = std::stoi(LR2HackBox::Get().mConfig->ReadValue("iAutoadjustClampMin"));
@@ -784,57 +847,51 @@ bool Misc::Init(uintptr_t moduleBase) {
 	((AnalogInput*)LR2HackBox::Get().mAnalogInput)->SetEnabled(mIsAnalogInput);
 	MirrorGearshift(mIsMirrorGearshift);
 	SetAutoadjustReset(mIsAutoadjustReset);
-	PreventKeysoundLeakOnPlayInit();
+}
 
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x9573), OnSetRetryFlag));
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x0198C1), OnPlayISetSelecter));
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x02D36C), OnInitPlay));
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x0AD24D), OnInitRetry));
+void Misc::SetHooks() {
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x9573), OnSetRetryFlag));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x0198C1), OnPlayISetSelecter));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x02D36C), OnInitPlay));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x0AD24D), OnInitRetry));
 
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x029AFA), OnRandomMixInput));
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x031BB6), OnSceneInitSwitch));
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x033830), OnSceneExitSwitch));
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x01EE32), OnOpenFolderPlaySound));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x029AFA), OnRandomMixInput));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x031BB6), OnSceneInitSwitch));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x033830), OnSceneExitSwitch));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x01EE32), OnOpenFolderPlaySound));
 
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x0B32AD), OnAddToAvgBpmSum));
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x0B4366), OnCalcAvgSpeedmult));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x0B32AD), OnAddToAvgBpmSum));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x0B4366), OnCalcAvgSpeedmult));
 
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x6D86), OnDrawNotesGetSongtimer));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x6D86), OnDrawNotesGetSongtimer));
 
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x7A83), OnBeforeAddDrawingBuffer_LN));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x7A83), OnBeforeAddDrawingBuffer_LN));
 
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x02C84F), OnAutoadjustInc));
-	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x02C854), OnAutoadjustDec));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x02C84F), OnAutoadjustInc));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x02C854), OnAutoadjustDec));
+
+	oSetFirstSkins = safetyhook::create_inline(mModuleBase + 0x9D80, OnSetFirstSkins);
+	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x03E4F8, OnWriteConfigXml));
 
 	if (MH_CreateHookEx((LPVOID)SaveDrawScreenToPNG, &OnSaveDrawScreenToPNG, &SaveDrawScreenToPNG) != MH_OK)
 	{
 		std::cout << "Couldn't hook SaveDrawScreenToPNG" << std::endl;
-		return false;
 	}
 
 	if (MH_CreateHookEx((LPVOID)AddDrawingBuffer_LN, &OnAddDrawingBuffer_LN, &AddDrawingBuffer_LN) != MH_OK)
 	{
 		std::cout << "Couldn't hook AddDrawingBuffer_LN" << std::endl;
-		return false;
 	}
 
 	if (MH_CreateHookEx((LPVOID)SetObjectString, &OnSetObjectString, &SetObjectString) != MH_OK)
 	{
 		std::cout << "Couldn't hook SetObjectString" << std::endl;
-		return false;
 	}
 
 	if (MH_QueueEnableHook(MH_ALL_HOOKS) || MH_ApplyQueued() != MH_OK)
 	{
 		std::cout << ("Couldn't enable misc hooks") << std::endl;
-		return false;
 	}
-
-	return true;
-}
-
-bool Misc::Deinit() {
-	return true;
 }
 
 static void HelpMarker(const char* desc) {
@@ -926,6 +983,13 @@ void Misc::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("Adds new type for autoadjust, which can be selected through settings menu of the game. It's called 'RESET', and after each play it resets the adjust to value before you started playing");
+
+	if (ImGui::Checkbox("Fix Course Result Config", &mIsCourseResultFix)) {
+		LR2HackBox::Get().mConfig->WriteValue("bCourseResultFix", mIsCourseResultFix ? "true" : "false");
+		LR2HackBox::Get().mConfig->SaveConfig();
+	}
+	ImGui::SameLine();
+	HelpMarker("Fixes a problem where selected course result skin wouldn't save to the config file. Keep in mind that launching the game without this would lead to this setting being deleted again");
 
 	if (ImGui::Checkbox("Analog scratch support", &mIsAnalogInput)) {
 		((AnalogInput*)LR2HackBox::Get().mAnalogInput)->SetEnabled(mIsAnalogInput);

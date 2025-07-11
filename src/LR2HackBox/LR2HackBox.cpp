@@ -34,7 +34,9 @@ LR2HackBox& LR2HackBox::Get() {
 	return instance;
 }
 
-bool LR2HackBox::Hook() {
+bool LR2HackBox::EarlyHook() {
+	mModuleBase = (uintptr_t)GetModuleHandle(NULL);
+
 	mLogger.SetPath("./LR2HackBox.log");
 
 	mConfig = new ConfigManager("LR2HackBox.ini");
@@ -50,6 +52,22 @@ bool LR2HackBox::Hook() {
 	IFMEMORYTRACKER(mMemoryTracker = new MemoryTracker());
 	IFMEMORYTRACKER(mMemoryTracker->Init(mModuleBase));
 
+	mUnrandomizer = new Unrandomizer();
+	mFunny = new Funny();
+	mMisc = new Misc();
+	mAnalogInput = new AnalogInput();
+	mNumbers = new Numbers();
+
+	mUnrandomizer->EarlyInit(mModuleBase);
+	mFunny->EarlyInit(mModuleBase);
+	mMisc->EarlyInit(mModuleBase);
+	mAnalogInput->EarlyInit(mModuleBase);
+	mNumbers->EarlyInit(mModuleBase);
+
+	return true;
+}
+
+bool LR2HackBox::Hook() {
 	while (!LR2::isInit) Sleep(1);
 
 	mInitTime = std::chrono::system_clock::now();
@@ -58,15 +76,7 @@ bool LR2HackBox::Hook() {
 
 	ImGuiInjector::Get().SetGlobalScale(mGlobalScale);
 	
-	mModuleBase = (uintptr_t)GetModuleHandle(NULL);
-
 	mMenu.InitBindings();
-
-	mUnrandomizer = new Unrandomizer();
-	mFunny = new Funny();
-	mMisc = new Misc();
-	mAnalogInput = new AnalogInput();
-	mNumbers = new Numbers();
 
 	mUnrandomizer->Init(mModuleBase);
 	mFunny->Init(mModuleBase);

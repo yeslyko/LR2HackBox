@@ -4,6 +4,7 @@
 
 class ModFeature {
 public:
+	virtual bool EarlyInit(uintptr_t moduleBase);
 	virtual bool Init(uintptr_t moduleBase);
 	virtual bool Deinit();
 protected:

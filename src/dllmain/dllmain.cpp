@@ -51,6 +51,7 @@ BOOL APIENTRY DllMain(
             Sleep(100);
 #endif
         LR2::Init();
+        LR2HackBox::Get().EarlyHook();
         std::thread(Init).detach();
 
         break;

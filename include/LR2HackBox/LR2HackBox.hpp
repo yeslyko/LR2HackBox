@@ -54,6 +54,7 @@ class LR2HackBox : public ModBody {
 public:
 
 	static LR2HackBox& Get();
+	bool EarlyHook(); // Will run before any game code.
 	bool Hook();
 	bool Unhook();
 

@@ -6,6 +6,7 @@
 
 class Misc : public ModFeature {
 public:
+	bool EarlyInit(uintptr_t moduleBase);
 	bool Init(uintptr_t moduleBase);
 	bool Deinit();
 
@@ -14,6 +15,9 @@ public:
 	void Menu();
 
 private:
+	void LoadConfig();
+	void SetHooks();
+
 	static void OnSetRetryFlag(SafetyHookContext& regs);
 	static void OnPlayISetSelecter(SafetyHookContext& regs);
 	void OnInit(SafetyHookContext& regs);
@@ -54,6 +58,9 @@ private:
 	static void OnAutoadjustInc(SafetyHookContext& regs);
 	static void OnAutoadjustDec(SafetyHookContext& regs);
 
+	static int OnSetFirstSkins(void* g);
+	static void OnWriteConfigXml(SafetyHookContext& regs);
+
 	int mAutoadjustClampMin = -100;
 	int mAutoadjustClampMax = 100;
 
@@ -80,4 +87,5 @@ private:
 	bool mIsLNAnimFix = false;
 	bool mIsAutoadjustClamp = false;
 	bool mIsAutoadjustReset = false;
+	bool mIsCourseResultFix = false;
 };

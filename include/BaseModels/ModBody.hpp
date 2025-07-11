@@ -4,6 +4,7 @@
 
 class ModBody {
 public:
+	virtual bool EarlyHook();
 	virtual bool Hook();
 	virtual bool Unhook();
 protected:
