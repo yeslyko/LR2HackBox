@@ -758,7 +758,7 @@ int Misc::OnSetObjectString(unsigned int num, void* string, void** objectList) {
 	}
 	return SetObjectString(num, (LR2::CSTR&)string, (LR2::CSTR*)objectList);
 }
-
+#include <Helpers/Helpers.hpp>
 safetyhook::InlineHook oSetFirstSkins;
 int Misc::OnSetFirstSkins(void* g) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
@@ -768,17 +768,13 @@ int Misc::OnSetFirstSkins(void* g) {
 	void* hXml = malloc(0x48);
 	typedef void*(__thiscall* tTiXmlDocumentCtor)(void* pThis, const char* filename);
 	tTiXmlDocumentCtor TiXmlDocumentCtor = (tTiXmlDocumentCtor)0x4C2FE0;
-	void* resul1 = TiXmlDocumentCtor(hXml, "LR2files\\Config\\config.xml");
-	typedef void(__thiscall* tTiXmlDocumentDtor)(void* pThis, int flag);
-	tTiXmlDocumentDtor TiXmlDocumentDtor = (tTiXmlDocumentDtor)(**(tTiXmlDocumentDtor**)hXml);
+	void* result1 = TiXmlDocumentCtor(hXml, "LR2files\\Config\\config.xml");
 	typedef bool(__thiscall* tTiXmlDocumentLoadFile)(void* pThis, int encoding);
 	tTiXmlDocumentLoadFile TiXmlDocumentLoadFile = (tTiXmlDocumentLoadFile)0x4C4150;
 	bool result2 = TiXmlDocumentLoadFile(hXml, 0);
 	typedef int(__cdecl* tReadXml_Str)(const char* level1, const char* level2, const char* level3, const LR2::CSTR initvalue, LR2::CSTR* oBuf, void* xmlData);
 	tReadXml_Str ReadXml_Str = (tReadXml_Str)0x43C0E0;
 	ReadXml_Str("config", "skin", "courseresult", "", &game.config.skin.skinFilePath[15], hXml);
-
-	TiXmlDocumentDtor(hXml, 1);
 	free(hXml);
 
 	return oSetFirstSkins.ccall<int>(g);
