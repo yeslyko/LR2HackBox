@@ -758,7 +758,7 @@ void Misc::SetAutoadjustReset(bool enable) {
 void Misc::SetSkipResultWaitIR(bool enable) {
 	unsigned short* netHandleJne = (unsigned short*)0x409708;
 
-	constexpr unsigned short def = 0x754D;
+	constexpr unsigned short def = 0x4D75;
 	constexpr unsigned short mod = 0x9090;
 
 	DWORD oldProtection = 0;
@@ -773,8 +773,8 @@ void Misc::SetSkipResultWaitIR(bool enable) {
 void Misc::SetSkipResultSub(bool enable) {
 	unsigned short* isNoSaveJne = (unsigned short*)0x409719;
 
-	constexpr unsigned short def = 0x0F85;
-	constexpr unsigned short mod = 0x90E9;
+	constexpr unsigned short def = 0x850F;
+	constexpr unsigned short mod = 0xE990;
 
 	DWORD oldProtection = 0;
 	BOOL hResult = VirtualProtect(isNoSaveJne, sizeof(unsigned short), PAGE_EXECUTE_READWRITE, &oldProtection);
