@@ -287,6 +287,13 @@ void Misc::OnSceneInitSwitch(SafetyHookContext& regs) {
 	}
 }
 
+void Misc::OnSceneProcSwitch(SafetyHookContext& regs) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+
+	switch (regs.eax) {
+	}
+}
+
 void Misc::OnSelectExit() {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 	mAutoadjustResetLastVal = game.config.play.judgetiming;
@@ -748,6 +755,36 @@ void Misc::SetAutoadjustReset(bool enable) {
 	hResult = VirtualProtect(autoadjustModeUpperLimit, 1, oldProtection, &discard);
 }
 
+void Misc::SetSkipResultWaitIR(bool enable) {
+	unsigned short* netHandleJne = (unsigned short*)0x409708;
+
+	constexpr unsigned short def = 0x754D;
+	constexpr unsigned short mod = 0x9090;
+
+	DWORD oldProtection = 0;
+	BOOL hResult = VirtualProtect(netHandleJne, sizeof(unsigned short), PAGE_EXECUTE_READWRITE, &oldProtection);
+
+	*netHandleJne = enable ? mod : def;
+
+	DWORD discard = 0;
+	hResult = VirtualProtect(netHandleJne, sizeof(unsigned short), oldProtection, &discard);
+}
+
+void Misc::SetSkipResultSub(bool enable) {
+	unsigned short* isNoSaveJne = (unsigned short*)0x409719;
+
+	constexpr unsigned short def = 0x0F85;
+	constexpr unsigned short mod = 0x90E9;
+
+	DWORD oldProtection = 0;
+	BOOL hResult = VirtualProtect(isNoSaveJne, sizeof(unsigned short), PAGE_EXECUTE_READWRITE, &oldProtection);
+
+	*isNoSaveJne = enable ? mod : def;
+
+	DWORD discard = 0;
+	hResult = VirtualProtect(isNoSaveJne, sizeof(unsigned short), oldProtection, &discard);
+}
+
 typedef int(__cdecl* tSetObjectString)(unsigned int num, LR2::CSTR string, LR2::CSTR* objectList);
 tSetObjectString SetObjectString = (tSetObjectString)0x4B6C40;
 int Misc::OnSetObjectString(unsigned int num, void* string, void** objectList) {
@@ -830,6 +867,8 @@ void Misc::LoadConfig() {
 	mIsAutoadjustClamp = LR2HackBox::Get().mConfig->ReadValue("bAutoadjustClamp") == "true" ? true : false;
 	mIsAutoadjustReset = LR2HackBox::Get().mConfig->ReadValue("bAutoadjustReset") == "true" ? true : false;
 	mIsCourseResultFix = LR2HackBox::Get().mConfig->ReadValue("bCourseResultFix") == "true" ? true : false;
+	mIsSkipResultWaitIR = LR2HackBox::Get().mConfig->ReadValue("bSkipResultWaitIR") == "true" ? true : false;
+	mIsSkipResultSub = LR2HackBox::Get().mConfig->ReadValue("bSkipResultSub") == "true" ? true : false;
 
 	try {
 		mAutoadjustClampMin = std::stoi(LR2HackBox::Get().mConfig->ReadValue("iAutoadjustClampMin"));
@@ -843,6 +882,8 @@ void Misc::LoadConfig() {
 	((AnalogInput*)LR2HackBox::Get().mAnalogInput)->SetEnabled(mIsAnalogInput);
 	MirrorGearshift(mIsMirrorGearshift);
 	SetAutoadjustReset(mIsAutoadjustReset);
+	SetSkipResultWaitIR(mIsSkipResultWaitIR);
+	SetSkipResultSub(mIsSkipResultSub);
 }
 
 void Misc::SetHooks() {
@@ -853,6 +894,7 @@ void Misc::SetHooks() {
 
 	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x029AFA), OnRandomMixInput));
 	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x031BB6), OnSceneInitSwitch));
+	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x033746), OnSceneProcSwitch));
 	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x033830), OnSceneExitSwitch));
 	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x01EE32), OnOpenFolderPlaySound));
 
@@ -986,6 +1028,22 @@ void Misc::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("Fixes a problem where selected course result skin wouldn't save to the config file. Keep in mind that launching the game without this would lead to this setting being deleted again");
+
+	if (ImGui::Checkbox("Skip Result Wait for IR", &mIsSkipResultWaitIR)) {
+		LR2HackBox::Get().mConfig->WriteValue("bSkipResultWaitIR", mIsSkipResultWaitIR ? "true" : "false");
+		LR2HackBox::Get().mConfig->SaveConfig();
+		SetSkipResultWaitIR(mIsSkipResultWaitIR);
+	}
+	ImGui::SameLine();
+	HelpMarker("Disables blocking of input on result scene until IR finishes its process, allowing you to quit the scene early");
+
+	if (ImGui::Checkbox("Skip Result Sub-Menu", &mIsSkipResultSub)) {
+		LR2HackBox::Get().mConfig->WriteValue("bSkipResultSub", mIsSkipResultSub ? "true" : "false");
+		LR2HackBox::Get().mConfig->SaveConfig();
+		SetSkipResultSub(mIsSkipResultSub);
+	}
+	ImGui::SameLine();
+	HelpMarker("Skips the sub-menu of result scene, normally invoked upon the first input. Will still block for IR, unless disabled separately");
 
 	if (ImGui::Checkbox("Analog scratch support", &mIsAnalogInput)) {
 		((AnalogInput*)LR2HackBox::Get().mAnalogInput)->SetEnabled(mIsAnalogInput);

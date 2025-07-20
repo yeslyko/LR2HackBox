@@ -28,6 +28,7 @@ private:
 
 	static void OnRandomMixInput(SafetyHookContext& regs);
 	static void OnSceneInitSwitch(SafetyHookContext& regs);
+	static void OnSceneProcSwitch(SafetyHookContext& regs);
 	static void OnSceneExitSwitch(SafetyHookContext& regs);
 	static void OnOpenFolderPlaySound(SafetyHookContext& regs);
 	void OnDecideInit();
@@ -74,6 +75,9 @@ private:
 
 	void MirrorGearshift(bool mirror);
 
+	void SetSkipResultWaitIR(bool value);
+	void SetSkipResultSub(bool value);
+
 	std::vector<SafetyHookMid> mMidHooks;
 
 	bool mIsRetryTweaks = false;
@@ -88,4 +92,6 @@ private:
 	bool mIsAutoadjustClamp = false;
 	bool mIsAutoadjustReset = false;
 	bool mIsCourseResultFix = false;
+	bool mIsSkipResultWaitIR = false;
+	bool mIsSkipResultSub = false;
 };
