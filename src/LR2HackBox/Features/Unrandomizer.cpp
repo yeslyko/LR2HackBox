@@ -17,10 +17,8 @@
 
 #include "LR2HackBox/LR2HackBox.hpp"
 
-#include "safetyhook/safetyhook.hpp"
+#include <safetyhook.hpp>
 #include "imgui/imgui.h"
-
-#pragma comment(lib, "libSafetyhook.lib")
 
 static int GetSeed(int arrange, int keymode) {
 	switch (keymode) {

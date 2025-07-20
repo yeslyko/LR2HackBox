@@ -12,11 +12,9 @@
 #include "Numbers.hpp"
 
 #include "ImGuiInjector/ImGuiInjector.hpp"
-#include "safetyhook/safetyhook.hpp"
+#include <safetyhook.hpp>
 #include "minhook/include/MinHook.h"
 #include "imgui/imgui.h"
-
-#pragma comment(lib, "libSafetyhook.lib")
 
 #pragma comment(lib, "Gdiplus.lib")
 

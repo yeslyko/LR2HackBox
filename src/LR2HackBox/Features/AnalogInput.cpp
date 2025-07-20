@@ -11,9 +11,7 @@
 #include "Helpers/Helpers.hpp"
 
 #include "imgui/imgui.h"
-#include "safetyhook/safetyhook.hpp"
-
-#pragma comment(lib, "libSafetyhook.lib")
+#include <safetyhook.hpp>
 
 typedef double(__cdecl* tGetTimeWrap)();
 tGetTimeWrap GetTimeWrap = (tGetTimeWrap)0x4B6890;

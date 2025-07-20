@@ -1,5 +1,5 @@
 #include "BaseModels/ModFeature.hpp"
-#include "safetyhook/safetyhook.hpp"
+#include <safetyhook.hpp>
 
 #include <unordered_map>
 #include <stdint.h>

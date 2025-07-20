@@ -4,10 +4,8 @@
 #include "LR2HackBox/LR2HackBox.hpp"
 #include "Misc.hpp"
 
-#include "safetyhook/safetyhook.hpp"
+#include <safetyhook.hpp>
 #include "imgui/imgui.h"
-
-#pragma comment(lib, "libSafetyhook.lib")
 
 void Funny::OnDrawNote(SafetyHookContext& regs) {
 	Funny& funny = *(Funny*)(LR2HackBox::Get().mFunny);

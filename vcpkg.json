@@ -1,5 +1,6 @@
 {
   "dependencies": [
-    "cpr"
+    "cpr",
+    "safetyhook"
   ]
 }

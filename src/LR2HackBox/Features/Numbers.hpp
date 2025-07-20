@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <array>
 
-#include "safetyhook/safetyhook.hpp"
+#include <safetyhook.hpp>
 
 class ColumnStatsMenu : public ImGuiMenu {
 public:

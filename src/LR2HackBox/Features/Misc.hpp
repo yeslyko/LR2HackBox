@@ -1,6 +1,6 @@
 #include "BaseModels/ModFeature.hpp"
 
-#include "safetyhook/safetyhook.hpp"
+#include <safetyhook.hpp>
 
 #include <stdint.h>
 

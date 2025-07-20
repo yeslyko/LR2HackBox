@@ -5,10 +5,8 @@
 
 #include <format>
 
-#include "safetyhook/safetyhook.hpp"
+#include <safetyhook.hpp>
 #include "imgui/imgui.h"
-
-#pragma comment(lib, "libSafetyhook.lib")
 
 void Numbers::CalcJudgementSN(int lane, int keypress, int timing, int player, void* noteIn, int multibadIndent) {
 	LR2::NoteStruct& note = *(LR2::NoteStruct*)noteIn;
