@@ -203,7 +203,8 @@ void Numbers::SceneInit() {
 bool Numbers::Init(uintptr_t moduleBase) {
 	Numbers::mModuleBase = moduleBase;
 
-	mIsP2Flip = LR2HackBox::Get().mConfig->ReadValue("bColumnStatsP2") == "true" ? true : false;
+	ConfigManager& config = *LR2HackBox::Get().mConfig;
+	mIsP2Flip = config.ReadValue("bColumnStatsP2", mIsP2Flip);
 	SetGuiMapping(mGuiMapping.data(), mKeymode, mIsP2Flip);
 
 	ImGuiInjector::Get().AddMenu(&mColumnStatsMenu);
@@ -282,6 +283,7 @@ void Numbers::ColumnStatsMenu() {
 }
 
 void Numbers::Menu() {
+	ConfigManager& config = *LR2HackBox::Get().mConfig;
 	ImGui::Indent();
 	constexpr const char* columnStatsHelp = "This is a table with all the judgement statistics for each column individually. Coloured columns represent their respective columns, while right-most column is their total. Autoplay and Replay modes are currently unimplemented.";
 	if (ImGui::TreeNode("Per-Column Stats")) {
@@ -289,8 +291,7 @@ void Numbers::Menu() {
 		HelpMarker(columnStatsHelp);
 		if (ImGui::Checkbox("P2 Scratch Side", &mIsP2Flip)) {
 			SetGuiMapping(mGuiMapping.data(), mKeymode, mIsP2Flip);
-			LR2HackBox::Get().mConfig->WriteValue("bColumnStatsP2", mIsP2Flip ? "true" : "false");
-			LR2HackBox::Get().mConfig->SaveConfig();
+			config.WriteValueAndSave("bColumnStatsP2", mIsP2Flip);
 		}
 		ImGui::SameLine();
 		HelpMarker("Change the side of scratch column between P1 and P2 when playing 5K or 7K.");

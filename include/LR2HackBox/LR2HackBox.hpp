@@ -1,7 +1,7 @@
 #include "BaseModels/ModBody.hpp"
 #include "BaseModels/ImGuiMenu.hpp"
 #include "BaseModels/ModFeature.hpp"
-#include "BaseModels/ConfigManager.hpp"
+#include "Helpers/Helpers.hpp"
 
 #include "LR2Mem/LR2Bindings.hpp"
 
@@ -35,8 +35,7 @@ public:
 	void InitBindings();
 private:
 	void BindingsMenu();
-	static int LoadBind(const char* name, int defaultVKey = 0);
-	static void SetBind(const char* name, int vKey);
+	void SetBind(const char* name, int vKey);
 
 	bool mIsRebindMenu = false;
 	IFSHOWIMGUIDEMO(bool mIsDemoMenu = false);

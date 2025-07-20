@@ -856,28 +856,22 @@ bool Misc::Deinit() {
 }
 
 void Misc::LoadConfig() {
-	mIsRetryTweaks = LR2HackBox::Get().mConfig->ReadValue("bRetryTweaks") == "true" ? true : false;
-	mIsRandomSelect = LR2HackBox::Get().mConfig->ReadValue("bRandomSelect") == "true" ? true : false;
-	mIsMainBPM = LR2HackBox::Get().mConfig->ReadValue("bMainBPM") == "true" ? true : false;
-	mIsRerouteScreenshots = LR2HackBox::Get().mConfig->ReadValue("bRerouteScreenshots") == "true" ? true : false;
-	mIsScreenshotsCopybuffer = LR2HackBox::Get().mConfig->ReadValue("bScreenshotsCopybuffer") == "true" ? true : false;
-	mIsMirrorGearshift = LR2HackBox::Get().mConfig->ReadValue("bMirrorGearshift") == "true" ? true : false;
-	mIsAnalogInput = LR2HackBox::Get().mConfig->ReadValue("bAnalogInput") == "true" ? true : false;
-	mIsLNAnimFix = LR2HackBox::Get().mConfig->ReadValue("bLNAnimFix") == "true" ? true : false;
-	mIsAutoadjustClamp = LR2HackBox::Get().mConfig->ReadValue("bAutoadjustClamp") == "true" ? true : false;
-	mIsAutoadjustReset = LR2HackBox::Get().mConfig->ReadValue("bAutoadjustReset") == "true" ? true : false;
-	mIsCourseResultFix = LR2HackBox::Get().mConfig->ReadValue("bCourseResultFix") == "true" ? true : false;
-	mIsSkipResultWaitIR = LR2HackBox::Get().mConfig->ReadValue("bSkipResultWaitIR") == "true" ? true : false;
-	mIsSkipResultSub = LR2HackBox::Get().mConfig->ReadValue("bSkipResultSub") == "true" ? true : false;
-
-	try {
-		mAutoadjustClampMin = std::stoi(LR2HackBox::Get().mConfig->ReadValue("iAutoadjustClampMin"));
-	}
-	catch (...) {}
-	try {
-		mAutoadjustClampMax = std::stoi(LR2HackBox::Get().mConfig->ReadValue("iAutoadjustClampMax"));
-	}
-	catch (...) {}
+	ConfigManager& config = *LR2HackBox::Get().mConfig;
+	mIsRetryTweaks = config.ReadValue("bRetryTweaks", mIsRetryTweaks);
+	mIsRandomSelect = config.ReadValue("bRandomSelect", mIsRandomSelect);
+	mIsMainBPM = config.ReadValue("bMainBPM", mIsMainBPM);
+	mIsRerouteScreenshots = config.ReadValue("bRerouteScreenshots", mIsRerouteScreenshots);
+	mIsScreenshotsCopybuffer = config.ReadValue("bScreenshotsCopybuffer", mIsScreenshotsCopybuffer);
+	mIsMirrorGearshift = config.ReadValue("bMirrorGearshift", mIsMirrorGearshift);
+	mIsAnalogInput = config.ReadValue("bAnalogInput", mIsAnalogInput);
+	mIsLNAnimFix = config.ReadValue("bLNAnimFix", mIsLNAnimFix);
+	mIsAutoadjustClamp = config.ReadValue("bAutoadjustClamp", mIsAutoadjustClamp);
+	mIsAutoadjustReset = config.ReadValue("bAutoadjustReset", mIsAutoadjustReset);
+	mIsCourseResultFix = config.ReadValue("bCourseResultFix", mIsCourseResultFix);
+	mIsSkipResultWaitIR = config.ReadValue("bSkipResultWaitIR", mIsSkipResultWaitIR);
+	mIsSkipResultSub = config.ReadValue("bSkipResultSub", mIsSkipResultSub);
+	mAutoadjustClampMin = config.ReadValue("iAutoadjustClampMin", mAutoadjustClampMin);
+	mAutoadjustClampMax = config.ReadValue("iAutoadjustClampMax", mAutoadjustClampMax);
 
 	((AnalogInput*)LR2HackBox::Get().mAnalogInput)->SetEnabled(mIsAnalogInput);
 	MirrorGearshift(mIsMirrorGearshift);
@@ -945,48 +939,43 @@ static void HelpMarker(const char* desc) {
 
 void Misc::Menu() {
 	LR2::game* game = LR2HackBox::Get().GetGame();
+	ConfigManager& config = *LR2HackBox::Get().mConfig;
 
 	ImGui::Indent();
 
 	if (ImGui::Checkbox("Restart Tweaks", &mIsRetryTweaks)) {
-		LR2HackBox::Get().mConfig->WriteValue("bRetryTweaks", mIsRetryTweaks ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bRetryTweaks", mIsRetryTweaks);
 	}
 	ImGui::SameLine();
 	HelpMarker("When enabled:\n  Play: 'START' on fade-out to restart with a new random,\n  'SELECT' to restart with the same random. \n\n  Result: <any white key>+2 on fade-out\n  to restart with a new random.");
 
 
 	if (ImGui::Checkbox("Random Select", &mIsRandomSelect)) {
-		LR2HackBox::Get().mConfig->WriteValue("bRandomSelect", mIsRandomSelect ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bRandomSelect", mIsRandomSelect);
 	}
 	ImGui::SameLine();
 	HelpMarker("Adds an assortment of 'RANDOM SELECT' entries to song folder, which starts a random song matching the filter from it.\n\nFilters are 'UNPLAYED', 'FAILED', '<HC', '<AAA'.");
 
 	if (ImGui::Checkbox("MainBPM hi-speed mode", &mIsMainBPM)) {
-		LR2HackBox::Get().mConfig->WriteValue("bMainBPM", mIsMainBPM ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bMainBPM", mIsMainBPM);
 	}
 	ImGui::SameLine();
 	HelpMarker("Replaces the effect of AverageBPM hi-speed mode to that of MainBPM");
 
 	if (ImGui::Checkbox("Reroute Screenshots", &mIsRerouteScreenshots)) {
-		LR2HackBox::Get().mConfig->WriteValue("bRerouteScreenshots", mIsRerouteScreenshots ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bRerouteScreenshots", mIsRerouteScreenshots);
 	}
 	ImGui::SameLine();
 	HelpMarker("Reroutes screenshots to save in 'screenshots' folder");
 
 	if (ImGui::Checkbox("Screenshots to Copybuffer", &mIsScreenshotsCopybuffer)) {
-		LR2HackBox::Get().mConfig->WriteValue("bScreenshotsCopybuffer", mIsScreenshotsCopybuffer ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bScreenshotsCopybuffer", mIsScreenshotsCopybuffer);
 	}
 	ImGui::SameLine();
 	HelpMarker("Puts the screenshots in the copybuffer, to later access them with CTRL+V");
 
 	if (ImGui::Checkbox("Mirror Lanecover Buttons", &mIsMirrorGearshift)) {
-		LR2HackBox::Get().mConfig->WriteValue("bMirrorGearshift", mIsMirrorGearshift ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bMirrorGearshift", mIsMirrorGearshift);
 
 		MirrorGearshift(mIsMirrorGearshift);
 	}
@@ -994,62 +983,54 @@ void Misc::Menu() {
 	HelpMarker("Mirrors controls for hi-speed and lanecover values, making lanecover on 1 and 2 instead of 6 and 7");
 
 	if (ImGui::Checkbox("Fix LN Animation", &mIsLNAnimFix)) {
-		LR2HackBox::Get().mConfig->WriteValue("bLNAnimFix", mIsLNAnimFix ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bLNAnimFix", mIsLNAnimFix);
 	}
 	ImGui::SameLine();
 	HelpMarker("Fixes a bug, where all visible LNs of the same column would play the hold animation, instead of only the LN you are holding");
 
 	if (ImGui::Checkbox("Autoadjust Clamp", &mIsAutoadjustClamp)) {
-		LR2HackBox::Get().mConfig->WriteValue("bAutoadjustClamp", mIsAutoadjustClamp ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bAutoadjustClamp", mIsAutoadjustClamp);
 	}
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(80.f);
 	if (ImGui::InputInt2("Min-Max", &mAutoadjustClampMin)) {
-		LR2HackBox::Get().mConfig->WriteValue("iAutoadjustClampMin", std::to_string(mAutoadjustClampMin));
-		LR2HackBox::Get().mConfig->WriteValue("iAutoadjustClampMax", std::to_string(mAutoadjustClampMax));
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValue("iAutoadjustClampMin", mAutoadjustClampMin);
+		config.WriteValue("iAutoadjustClampMax", mAutoadjustClampMax);
+		config.SaveConfig();
 	}
 	ImGui::SameLine();
 	HelpMarker("Clamps the autoadjust to the bounds specified in 'Min-Max' boxes, not allowing it to adjust below min and above max");
 
 	if (ImGui::Checkbox("Autoadjust Reset", &mIsAutoadjustReset)) {
 		SetAutoadjustReset(mIsAutoadjustReset);
-		LR2HackBox::Get().mConfig->WriteValue("bAutoadjustReset", mIsAutoadjustReset ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bAutoadjustReset", mIsAutoadjustReset);
 	}
 	ImGui::SameLine();
 	HelpMarker("Adds new type for autoadjust, which can be selected through settings menu of the game. It's called 'RESET', and after each play it resets the adjust to value before you started playing");
 
 	if (ImGui::Checkbox("Fix Course Result Config", &mIsCourseResultFix)) {
-		LR2HackBox::Get().mConfig->WriteValue("bCourseResultFix", mIsCourseResultFix ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bCourseResultFix", mIsCourseResultFix);
 	}
 	ImGui::SameLine();
 	HelpMarker("Fixes a problem where selected course result skin wouldn't save to the config file. Keep in mind that launching the game without this would lead to this setting being deleted again");
 
 	if (ImGui::Checkbox("Skip Result Wait for IR", &mIsSkipResultWaitIR)) {
-		LR2HackBox::Get().mConfig->WriteValue("bSkipResultWaitIR", mIsSkipResultWaitIR ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bSkipResultWaitIR", mIsSkipResultWaitIR);
 		SetSkipResultWaitIR(mIsSkipResultWaitIR);
 	}
 	ImGui::SameLine();
 	HelpMarker("Disables blocking of input on result scene until IR finishes its process, allowing you to quit the scene early");
 
 	if (ImGui::Checkbox("Skip Result Sub-Menu", &mIsSkipResultSub)) {
-		LR2HackBox::Get().mConfig->WriteValue("bSkipResultSub", mIsSkipResultSub ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
+		config.WriteValueAndSave("bSkipResultSub", mIsSkipResultSub);
 		SetSkipResultSub(mIsSkipResultSub);
 	}
 	ImGui::SameLine();
 	HelpMarker("Skips the sub-menu of result scene, normally invoked upon the first input. Will still block for IR, unless disabled separately");
 
 	if (ImGui::Checkbox("Analog scratch support", &mIsAnalogInput)) {
+		config.WriteValueAndSave("bAnalogInput", mIsAnalogInput);
 		((AnalogInput*)LR2HackBox::Get().mAnalogInput)->SetEnabled(mIsAnalogInput);
-
-		LR2HackBox::Get().mConfig->WriteValue("bAnalogInput", mIsAnalogInput ? "true" : "false");
-		LR2HackBox::Get().mConfig->SaveConfig();
 	}
 	ImGui::SameLine();
 	HelpMarker("Lets you select a device and axis to use for scratch input. While enabled, set axis should be unbound in LR2 input settings");

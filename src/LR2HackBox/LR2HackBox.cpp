@@ -1,6 +1,6 @@
 ﻿#define SHOWIMGUIDEMO 0
 
-#include "Features/MemoryTracker.hpp")
+#include "Features/MemoryTracker.hpp"
 #include "LR2HackBox/LR2HackBox.hpp"
 
 #include "Helpers/Helpers.hpp"
@@ -128,11 +128,8 @@ void LR2HackBox::StartVersionCheck() {
 }
 
 void LR2HackBox::LoadConfig() {
-	mIsCheckUpdate = mConfig->ReadValue("bCheckUpdate") == "" ? true : mConfig->ReadValue("bCheckUpdate") == "true" ? true : false;
-	try {
-		mGlobalScale = std::stof(mConfig->ReadValue("fGlobalScale"));
-	}
-	catch (...) {}
+	mIsCheckUpdate = mConfig->ReadValue("bCheckUpdate", mIsCheckUpdate);
+	mGlobalScale = mConfig->ReadValue("fGlobalScale", mGlobalScale);
 }
 
 void LR2HackBox::SettingsMenu() {
@@ -142,14 +139,11 @@ void LR2HackBox::SettingsMenu() {
 	ImGui::SameLine();
 	if (ImGui::Button("Apply")) {
 		ImGuiInjector::Get().SetGlobalScale(mGlobalScale);
-		mConfig->WriteValue("fGlobalScale", std::to_string(mGlobalScale));
-		mConfig->SaveConfig();
+		mConfig->WriteValueAndSave("fGlobalScale", mGlobalScale);
 	}
 
 	if (ImGui::Checkbox("Update Notification", &mIsCheckUpdate)) {
-		ConfigManager& config = *LR2HackBox::Get().mConfig;
-		config.WriteValue("bCheckUpdate", mIsCheckUpdate ? "true" : "false");
-		config.SaveConfig();
+		mConfig->WriteValueAndSave("bCheckUpdate", mIsCheckUpdate);
 
 		if (mIsCheckUpdate) {
 			StartVersionCheck();
@@ -287,50 +281,20 @@ void LR2HackBoxMenu::BindingsMenu() {
 	ImGui::End();
 }
 
-int LR2HackBoxMenu::LoadBind(const char* name, int defaultVKey) {
-	ConfigManager& config = *LR2HackBox::Get().mConfig;
-	int key = defaultVKey;
-	if (defaultVKey) {
-		if (!config.ValueExists(name)) {
-			config.WriteValue(name, std::to_string(defaultVKey));
-			config.SaveConfig();
-		}
-		else {
-			try {
-				key = std::stoi(config.ReadValue(name));
-			}
-			catch (...) {
-				config.WriteValue(name, std::to_string(defaultVKey));
-				config.SaveConfig();
-			}
-		}
-	}
-	else {
-		try {
-			key = std::stoi(config.ReadValue(name));
-		}
-		catch (...) {
-
-		}
-	}
-	return key;
-}
-
 void LR2HackBoxMenu::SetBind(const char* name, int vKey) {
-	LR2HackBoxMenu& menu = LR2HackBox::Get().mMenu;
-	menu.mMenuBindings[name].vKey = vKey;
+	mMenuBindings[name].vKey = vKey;
 
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 	std::string configEntry = name;
 	configEntry.erase(std::remove_if(configEntry.begin(), configEntry.end(), isspace), configEntry.end());
 	configEntry = "iBind" + configEntry;
-	config.WriteValue(configEntry, std::to_string(vKey));
-	config.SaveConfig();
+	config.WriteValueAndSave(configEntry, vKey);
 }
 
 void LR2HackBoxMenu::InitBindings() {
-	mMenuBindings["Menu Open"] = Binding(LoadBind("iBindMenuOpen", VK_INSERT), true);
-	mMenuBindings["Stats Open"] = Binding(LoadBind("iBindStatsOpen"), false);
+	ConfigManager& config = *LR2HackBox::Get().mConfig;
+	mMenuBindings["Menu Open"] = Binding(config.ReadValue("iBindMenuOpen", VK_INSERT), true);
+	mMenuBindings["Stats Open"] = Binding(config.ReadValue("iBindStatsOpen", 0), false);
 }
 
 void LR2HackBoxMenu::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {

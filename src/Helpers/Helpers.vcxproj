@@ -20,10 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\Helpers\Helpers.hpp" />
+    <ClInclude Include="ConfigManager.hpp" />
     <ClInclude Include="Logger.hpp" />
     <ClInclude Include="mem.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ConfigManager.cpp" />
     <ClCompile Include="Helpers.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="mem.cpp" />

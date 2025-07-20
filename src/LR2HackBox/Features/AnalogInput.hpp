@@ -19,10 +19,10 @@ private:
 	safetyhook::InlineHook oInputToButton;
 
 	enum Axis {
+		NONE = -1,
 		X,
 		Y,
-		Z,
-		NONE
+		Z
 	};
 
 	struct InputDevice {

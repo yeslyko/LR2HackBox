@@ -19,13 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ConfigManager.cpp" />
     <ClCompile Include="ImGuiMenu.cpp" />
     <ClCompile Include="ModBody.cpp" />
     <ClCompile Include="ModFeature.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\BaseModels\ConfigManager.hpp" />
     <ClInclude Include="..\..\include\BaseModels\ImGuiMenu.hpp" />
     <ClInclude Include="..\..\include\BaseModels\ModBody.hpp" />
     <ClInclude Include="..\..\include\BaseModels\ModFeature.hpp" />

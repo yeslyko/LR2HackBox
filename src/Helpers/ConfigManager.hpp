@@ -1,14 +1,17 @@
 #pragma once
 
-#include <windows.h>
 #include <string>
 #include <map>
 
 class ConfigManager {
 public:
 	ConfigManager(std::string path, bool load = true);
-	void WriteValue(std::string name, std::string value);
-	std::string ReadValue(std::string name);
+	template <typename T> void WriteValue(std::string name, T value);
+	template <typename T> void WriteValueAndSave(std::string name, T value) {
+		WriteValue(name, value);
+		SaveConfig();
+	}
+	template <typename T> T ReadValue(std::string name, T def);
 	bool ValueExists(std::string name);
 
 	void SaveConfig();

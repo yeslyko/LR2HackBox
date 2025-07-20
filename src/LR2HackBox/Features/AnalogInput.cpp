@@ -47,7 +47,7 @@ HRESULT __stdcall AnalogInput::OnGetDeviceState(void* pThis, DWORD cbData, LPVOI
         analogInput.deviceNames.push_back(analogInput.devicesMap[pThis].c_str());
         for (int i = 0; i < std::size(analogInput.boundDevices); i++) {
             std::string sideNotation = "P" + std::to_string(i + 1);
-            std::string savedDevice = LR2HackBox::Get().mConfig->ReadValue("sAnalogInputDevice" + sideNotation);
+            std::string savedDevice = LR2HackBox::Get().mConfig->ReadValue<std::string>("sAnalogInputDevice" + sideNotation, "");
             if (savedDevice == ddinst.tszProductName) {
                 analogInput.boundDevices[i].pDevice = pThis;
                 analogInput.boundDevices[i].name = savedDevice;
@@ -235,30 +235,16 @@ bool AnalogInput::Init(uintptr_t moduleBase) {
 
     oInputToButton = safetyhook::create_inline(InputToButton, OnInputToButton);
 
+    ConfigManager& config = *LR2HackBox::Get().mConfig;
     for (int i = 0; i < std::size(boundDevices); i++) {
+        InputDevice& device = boundDevices[i];
         std::string sideNotation = "P" + std::to_string(i + 1);
-        boundDevices[i].enabled = LR2HackBox::Get().mConfig->ReadValue("bAnalogInputEnabled" + sideNotation) == "true" ? true : false;
-
-        try {
-            int savedAxis = std::stoi(LR2HackBox::Get().mConfig->ReadValue("iAnalogInputAxis" + sideNotation));
-            boundDevices[i].axis = AnalogInput::Axis(savedAxis);
-            boundDevices[i].boundAxisIdx = savedAxis;
-        }
-        catch (...) {}
-
-        boundDevices[i].axisInverted = LR2HackBox::Get().mConfig->ReadValue("bAnalogInputAxisInvert" + sideNotation) == "true" ? true : false;
-
-        try {
-            int timeoutDuration = std::stoi(LR2HackBox::Get().mConfig->ReadValue("iAnalogTimeoutDuration" + sideNotation));
-            boundDevices[i].timeoutDuration = timeoutDuration;
-        }
-        catch (...) {}
-
-        try {
-            int threshold = std::stoi(LR2HackBox::Get().mConfig->ReadValue("iAnalogThreshold" + sideNotation));
-            boundDevices[i].threshold = threshold;
-        }
-        catch (...) {}
+        device.enabled = config.ReadValue("bAnalogInputEnabled" + sideNotation, device.enabled);
+        device.axis = AnalogInput::Axis(config.ReadValue<int>("iAnalogInputAxis" + sideNotation, device.axis));
+        device.boundAxisIdx = config.ReadValue("iAnalogInputAxis" + sideNotation, device.boundAxisIdx);
+        device.axisInverted = config.ReadValue("bAnalogInputAxisInvert" + sideNotation, device.axisInverted);
+        device.timeoutDuration = config.ReadValue("iAnalogTimeoutDuration" + sideNotation, device.timeoutDuration);
+        device.threshold = config.ReadValue("iAnalogThreshold" + sideNotation, device.threshold);
     }
 
 	return true;
@@ -290,51 +276,47 @@ const char* const axisNames[3]{
 };
 
 void AnalogInput::Menu() {
+    ConfigManager& config = *LR2HackBox::Get().mConfig;
     for (int i = 0; i < std::size(boundDevices); i++) {
+        InputDevice& device = boundDevices[i];
         std::string sideNotation = "P" + std::to_string(i + 1);
         std::string treeText = "Analog Input Settings " + sideNotation;
         if (ImGui::TreeNode(treeText.c_str())) {
             std::string enabledText = "Enable##" + sideNotation;
-            if (ImGui::Checkbox(enabledText.c_str(), &boundDevices[i].enabled)) {
-                LR2HackBox::Get().mConfig->WriteValue("bAnalogInputEnabled" + sideNotation, boundDevices[i].enabled ? "true" : "false");
-                LR2HackBox::Get().mConfig->SaveConfig();
+            if (ImGui::Checkbox(enabledText.c_str(), &device.enabled)) {
+                config.WriteValueAndSave("bAnalogInputEnabled" + sideNotation, device.enabled);
             }
             float boxWidth = 150.f;
             std::string selectedDeviceText = "Selected Input Device##" + sideNotation;
             ImGui::SetNextItemWidth(boxWidth);
-            if (ImGui::Combo(selectedDeviceText.c_str(), &boundDevices[i].boundDeviceIdx, deviceNames.data(), deviceNames.size())) {
-                boundDevices[i].pDevice = devices[boundDevices[i].boundDeviceIdx];
-                boundDevices[i].name = deviceNames[boundDevices[i].boundDeviceIdx];
-                boundDevices[i].Reset();
+            if (ImGui::Combo(selectedDeviceText.c_str(), &device.boundDeviceIdx, deviceNames.data(), deviceNames.size())) {
+                device.pDevice = devices[device.boundDeviceIdx];
+                device.name = deviceNames[device.boundDeviceIdx];
+                device.Reset();
 
-                LR2HackBox::Get().mConfig->WriteValue("sAnalogInputDevice" + sideNotation, boundDevices[i].name);
-                LR2HackBox::Get().mConfig->SaveConfig();
+                config.WriteValueAndSave("sAnalogInputDevice" + sideNotation, device.name);
             }
             std::string axisText = "Axis to Use##" + sideNotation;
             ImGui::SetNextItemWidth(boxWidth);
-            if (ImGui::Combo(axisText.c_str(), &boundDevices[i].boundAxisIdx, axisNames, std::size(axisNames))) {
-                boundDevices[i].axis = AnalogInput::Axis(boundDevices[i].boundAxisIdx);
-                boundDevices[i].Reset();
+            if (ImGui::Combo(axisText.c_str(), &device.boundAxisIdx, axisNames, std::size(axisNames))) {
+                device.axis = AnalogInput::Axis(device.boundAxisIdx);
+                device.Reset();
 
-                LR2HackBox::Get().mConfig->WriteValue("iAnalogInputAxis" + sideNotation, std::to_string(boundDevices[i].boundAxisIdx));
-                LR2HackBox::Get().mConfig->SaveConfig();
+                config.WriteValueAndSave("iAnalogInputAxis" + sideNotation, device.boundAxisIdx);
             }
             std::string invertAxisText = "Invert Axis##" + sideNotation;
-            if (ImGui::Checkbox(invertAxisText.c_str(), &boundDevices[i].axisInverted)) {
-                LR2HackBox::Get().mConfig->WriteValue("bAnalogInputAxisInvert" + sideNotation, boundDevices[i].axisInverted ? "true" : "false");
-                LR2HackBox::Get().mConfig->SaveConfig();
+            if (ImGui::Checkbox(invertAxisText.c_str(), &device.axisInverted)) {
+                config.WriteValueAndSave("bAnalogInputAxisInvert" + sideNotation, device.axisInverted);
             }
             std::string timeoutText = "Hold Timeout Duration##" + sideNotation;
             ImGui::SetNextItemWidth(boxWidth);
-            if (ImGui::InputInt(timeoutText.c_str(), &boundDevices[i].timeoutDuration)) {
-                LR2HackBox::Get().mConfig->WriteValue("iAnalogTimeoutDuration" + sideNotation, std::to_string(boundDevices[i].timeoutDuration));
-                LR2HackBox::Get().mConfig->SaveConfig();
+            if (ImGui::InputInt(timeoutText.c_str(), &device.timeoutDuration)) {
+                config.WriteValueAndSave("iAnalogTimeoutDuration" + sideNotation, device.timeoutDuration);
             }
             std::string thresholdText = "Activation Threshold##" + sideNotation;
             ImGui::SetNextItemWidth(boxWidth);
-            if (ImGui::InputInt(thresholdText.c_str(), &boundDevices[i].threshold)) {
-                LR2HackBox::Get().mConfig->WriteValue("iAnalogThreshold" + sideNotation, std::to_string(boundDevices[i].threshold));
-                LR2HackBox::Get().mConfig->SaveConfig();
+            if (ImGui::InputInt(thresholdText.c_str(), &device.threshold)) {
+                config.WriteValueAndSave("iAnalogThreshold" + sideNotation, device.threshold);
             }
             ImGui::TreePop();
         }
