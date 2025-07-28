@@ -228,56 +228,65 @@ static void HelpMarker(const char* desc) {
 }
 
 void Numbers::ColumnStatsMenu() {
-	constexpr const int judgeColumnSize = sizeof(JudgeCounter) / sizeof(int);
+	const float scale = ImGui::GetStyle().FontScaleMain;
+	float paddingHeight = 4.f * scale;
+	if ((static_cast<int>(scale * 10) % 5) != 0) {
+		paddingHeight = 3.f * scale;
+	}
+	ImVec2 oldCursorPos = ImGui::GetCursorPos();
+	ImGui::SetCursorPos(ImVec2(-10000,-10000));
+	ImGui::Text("PGREAT:");
+	const float rowHeight = ImGui::GetItemRectSize().y + paddingHeight;
+	ImGui::SetCursorPos(oldCursorPos);
+	const float scrollHeight = 14.f * scale;
+	constexpr const int judgeRowCount = sizeof(JudgeCounter) / sizeof(int);
 	constexpr const char* notations[] = { "PGREAT:", " GREAT:", "  GOOD:", "   BAD:", "  POOR:", "E.POOR:", "  FAST:", "  SLOW:", "    CB:", "   EX%%:"};
-	static_assert(std::size(notations) == judgeColumnSize);
-	ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_ScrollX | ImGuiTableFlags_RowBg;
-	if (ImGui::BeginTable("JudgementCounterTable", mKeycount + 2, tableFlags))
-	{
-		JudgeCounter total;
-		for (int rowIdx = 0; rowIdx < judgeColumnSize; rowIdx++) {
-			ImGui::TableNextRow();
-			for (int columnIdx = 0; columnIdx < mKeycount + 2; columnIdx++) {
-				ImGui::TableNextColumn();
-
-				JudgeCounter& column = mJudgeCountColumns[mGuiMapping[columnIdx - 1]];
-				if (columnIdx == 0) {
-					ImGui::Text(notations[rowIdx]);
-				}
-				else if (columnIdx != mKeycount + 1) {
-					if (mGuiMapping[columnIdx - 1] == 0 || mGuiMapping[columnIdx - 1] == 10) {
-						ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(189, 0, 0, 100), columnIdx);
-					}
-					else {
-						if (mGuiMapping[columnIdx - 1] % 2 == 0) {
-							ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(0, 0, 139, 100), columnIdx);
-						}
-						else {
-							ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(230, 230, 230, 100), columnIdx);
-						}
-					}
-					if (rowIdx != judgeColumnSize - 1) {
-						ImGui::Text("%d", ((int*)&column)[rowIdx]);
-					}
-					else {
-						if (column.noteCount) ImGui::Text("%.2f", static_cast<float>(column.pgreat * 2 + column.great) / (column.noteCount * 2) * 100.f);
-						else ImGui::Text("%.2f", 100.f);
-					}
-					((int*)&total)[rowIdx] += ((int*)&column)[rowIdx];
+	static_assert(std::size(notations) == judgeRowCount);
+	ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg;
+	ImGui::BeginTable("JudgementCounterTable", mKeycount + 2, tableFlags, ImVec2(0.f, judgeRowCount * rowHeight + scrollHeight));
+	ImGui::TableSetupColumn("Labels", ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("PGREAT:").x);
+	for (int columnIdx = 0; columnIdx < mKeycount + 1; columnIdx++) {
+		std::string columnName = "Column##" + (columnIdx + 1);
+		ImGui::TableSetupColumn(columnName.c_str(), ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("100.00").x);
+	}
+	JudgeCounter total;
+	for (int rowIdx = 0; rowIdx < judgeRowCount; rowIdx++) {
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::Text(notations[rowIdx]);
+		for (int columnIdx = 0; columnIdx < mKeycount; columnIdx++) {
+			ImGui::TableSetColumnIndex(columnIdx + 1);
+			JudgeCounter& column = mJudgeCountColumns[mGuiMapping[columnIdx]];
+			if (mGuiMapping[columnIdx] == 0 || mGuiMapping[columnIdx] == 10) {
+				ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(189, 0, 0, 100));
+			}
+			else {
+				if (mGuiMapping[columnIdx] % 2 == 0) {
+					ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(0, 0, 139, 100));
 				}
 				else {
-					if (rowIdx != judgeColumnSize - 1) {
-						ImGui::Text("%d", ((int*)&total)[rowIdx]);
-					}
-					else {
-						if (total.noteCount) ImGui::Text("%.2f", static_cast<float>(total.pgreat * 2 + total.great) / (total.noteCount * 2) * 100.f);
-						else ImGui::Text("%.2f", 100.f);
-					}
+					ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(230, 230, 230, 100));
 				}
 			}
+			if (rowIdx != judgeRowCount - 1) {
+				ImGui::Text("%d", ((int*)&column)[rowIdx]);
+			}
+			else {
+				if (column.noteCount) ImGui::Text("%.2f", static_cast<float>(column.pgreat * 2 + column.great) / (column.noteCount * 2) * 100.f);
+				else ImGui::Text("%.2f", 100.f);
+			}
+			((int*)&total)[rowIdx] += ((int*)&column)[rowIdx];
 		}
-		ImGui::EndTable();
+		ImGui::TableSetColumnIndex(ImGui::TableGetColumnCount() - 1);
+		if (rowIdx != judgeRowCount - 1) {
+			ImGui::Text("%d", ((int*)&total)[rowIdx]);
+		}
+		else {
+			if (total.noteCount) ImGui::Text("%.2f", static_cast<float>(total.pgreat * 2 + total.great) / (total.noteCount * 2) * 100.f);
+			else ImGui::Text("%.2f", 100.f);
+		}
 	}
+	ImGui::EndTable();
 }
 
 void Numbers::Menu() {
