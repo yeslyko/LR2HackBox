@@ -71,6 +71,7 @@ public:
 	std::unique_ptr<ModFeature> mMisc;
 	std::unique_ptr<ModFeature> mAnalogInput;
 	std::unique_ptr<ModFeature> mNumbers;
+	std::unique_ptr<ModFeature> mGameOptions;
 	IFMEMORYTRACKER(std::unique_ptr<ModFeature> mMemoryTracker);
 
 	std::unique_ptr<ConfigManager> mConfig;

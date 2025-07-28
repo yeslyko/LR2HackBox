@@ -17,6 +17,7 @@
 #include "Features/AnalogInput.hpp"
 #include "Features/Numbers.hpp"
 #include "Features/Version.hpp"
+#include "Features/GameOptions.hpp"
 
 #pragma comment(lib, "Helpers.lib")
 #pragma comment(lib, "ImGuiInjector.lib")
@@ -58,12 +59,14 @@ bool LR2HackBox::EarlyHook() {
 	mMisc.reset(new Misc());
 	mAnalogInput.reset(new AnalogInput());
 	mNumbers.reset(new Numbers());
+	mGameOptions.reset(new GameOptions());
 
 	mUnrandomizer->EarlyInit(mModuleBase);
 	mFunny->EarlyInit(mModuleBase);
 	mMisc->EarlyInit(mModuleBase);
 	mAnalogInput->EarlyInit(mModuleBase);
 	mNumbers->EarlyInit(mModuleBase);
+	mGameOptions->EarlyInit(mModuleBase);
 
 	return true;
 }
@@ -84,6 +87,7 @@ bool LR2HackBox::Hook() {
 	mMisc->Init(mModuleBase);
 	mAnalogInput->Init(mModuleBase);
 	mNumbers->Init(mModuleBase);
+	mGameOptions->Init(mModuleBase);
 
 	return true;
 }
@@ -94,6 +98,7 @@ bool LR2HackBox::Unhook() {
 	mMisc->Deinit();
 	mAnalogInput->Deinit();
 	mNumbers->Deinit();
+	mGameOptions->Deinit();
 	IFMEMORYTRACKER(mMemoryTracker->Deinit());
 	return true;
 }
@@ -192,6 +197,10 @@ void LR2HackBoxMenu::Loop() {
 
 	if (ImGui::CollapsingHeader("Numbers")) {
 		LR2HackBox::Get().mNumbers->Menu();
+	}
+
+	if (ImGui::CollapsingHeader("Game Options")) {
+		LR2HackBox::Get().mGameOptions->Menu();
 	}
 
 	if (ImGui::CollapsingHeader("Settings")) {
