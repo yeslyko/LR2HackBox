@@ -13,3 +13,7 @@ bool ModFeature::Init(uintptr_t moduleBase) {
 bool ModFeature::Deinit() {
 	return true;
 }
+
+void ModFeature::Menu() {
+
+}

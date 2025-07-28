@@ -19,7 +19,7 @@ tGetTimeWrap GetTimeWrap = (tGetTimeWrap)0x4B6890;
 typedef HRESULT(__stdcall* tGetDeviceState)(IDirectInputDevice7* pThis, DWORD cbData, LPVOID lpvData);
 tGetDeviceState GetDeviceState = nullptr;
 HRESULT __stdcall AnalogInput::OnGetDeviceState(void* pThis, DWORD cbData, LPVOID lpvData) {
-    AnalogInput& analogInput = *(AnalogInput*)(LR2HackBox::Get().mAnalogInput);
+    AnalogInput& analogInput = *(AnalogInput*)(LR2HackBox::Get().mAnalogInput.get());
 
     IDirectInputDevice7& device = *(IDirectInputDevice7*)pThis;
     
@@ -139,7 +139,7 @@ HRESULT __stdcall AnalogInput::OnGetDeviceState(void* pThis, DWORD cbData, LPVOI
 typedef int(__cdecl* tInputToButton)(LR2::inputStructure* is, LR2::CONFIG_INPUT* cfg_input, int player, int isReplay);
 tInputToButton InputToButton = (tInputToButton)0x4BF020;
 int __cdecl AnalogInput::OnInputToButton(void* is, void* cfg_input, int player, int isReplay) {
-    AnalogInput& analogInput = *(AnalogInput*)(LR2HackBox::Get().mAnalogInput);
+    AnalogInput& analogInput = *(AnalogInput*)(LR2HackBox::Get().mAnalogInput.get());
     int result = analogInput.oInputToButton.ccall<int>(is, cfg_input, player, isReplay);
     if (!analogInput.mIsEnabled) return result;
 

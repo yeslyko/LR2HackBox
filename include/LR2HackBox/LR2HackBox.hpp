@@ -66,14 +66,14 @@ public:
 
 	LR2HackBoxMenu mMenu;
 
-	ModFeature* mUnrandomizer = nullptr;
-	ModFeature* mFunny = nullptr;
-	ModFeature* mMisc = nullptr;
-	ModFeature* mAnalogInput = nullptr;
-	ModFeature* mNumbers = nullptr;
-	IFMEMORYTRACKER(ModFeature* mMemoryTracker = nullptr);
+	std::unique_ptr<ModFeature> mUnrandomizer;
+	std::unique_ptr<ModFeature> mFunny;
+	std::unique_ptr<ModFeature> mMisc;
+	std::unique_ptr<ModFeature> mAnalogInput;
+	std::unique_ptr<ModFeature> mNumbers;
+	IFMEMORYTRACKER(std::unique_ptr<ModFeature> mMemoryTracker);
 
-	ConfigManager* mConfig = nullptr;
+	std::unique_ptr<ConfigManager> mConfig;
 
 	std::chrono::system_clock::time_point mInitTime;
 	bool mVerCheckFin = false;

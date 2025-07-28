@@ -29,7 +29,7 @@ static int GetSeed(int arrange, int keymode) {
 }
 
 void Unrandomizer::OnSetRandomSeed(SafetyHookContext& regs) {
-	Unrandomizer& unrandomizer = *(Unrandomizer*)(LR2HackBox::Get().mUnrandomizer);
+	Unrandomizer& unrandomizer = *(Unrandomizer*)(LR2HackBox::Get().mUnrandomizer.get());
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 
 	uintptr_t* randomseed = &regs.eax;
@@ -126,7 +126,7 @@ void Unrandomizer::OnAfterPopulateNoteMapping(SafetyHookContext& regs) {
 	noteOrder[7] = 0;
 	std::string name = ws2utf(s2ws(game.sSelect.metaSelected.title.body) + s2ws(game.sSelect.metaSelected.subtitle.body));
 	Unrandomizer::RandomHistoryEntry entry(name, noteOrder);
-	Unrandomizer& unrandomizer = *(Unrandomizer*)(LR2HackBox::Get().mUnrandomizer);
+	Unrandomizer& unrandomizer = *(Unrandomizer*)(LR2HackBox::Get().mUnrandomizer.get());
 	unrandomizer.AddToHistory(entry);
 
 	if (unrandomizer.mIsTrackRandom) unrandomizer.SetOrder(entry.GetRandom().c_str());

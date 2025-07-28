@@ -11,7 +11,7 @@
 void Numbers::CalcJudgementSN(int lane, int keypress, int timing, int player, void* noteIn, int multibadIndent) {
 	LR2::NoteStruct& note = *(LR2::NoteStruct*)noteIn;
 
-	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers);
+	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers.get());
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 
 	JudgeCounter& counter = numbers.mJudgeCountColumns[lane];
@@ -64,7 +64,7 @@ void Numbers::CalcJudgementSN(int lane, int keypress, int timing, int player, vo
 void Numbers::CalcJudgementLN(int lane, int keypress, int timing, int player, void* noteIn) {
 	LR2::NoteStruct& note = *(LR2::NoteStruct*)noteIn;
 
-	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers);
+	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers.get());
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 
 	JudgeCounter& counter = numbers.mJudgeCountColumns[lane];
@@ -131,7 +131,7 @@ void Numbers::CalcJudgementLN(int lane, int keypress, int timing, int player, vo
 }
 
 void Numbers::OnProcSNOrLNFork(SafetyHookContext& regs) {
-	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers);
+	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers.get());
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 
 	int lane = regs.esi;
@@ -322,7 +322,7 @@ void Numbers::ToggleColumnStatsMenu() {
 
 void ColumnStatsMenu::Loop() {
 	ImGui::Begin("Per-Column Stats", &mIsOpen);
-	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers);
+	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers.get());
 	numbers.ColumnStatsMenu();
 	if (!mIsOpen) {
 		numbers.SetOpenColumnStatsMenu(false);

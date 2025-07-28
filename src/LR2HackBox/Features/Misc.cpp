@@ -31,7 +31,7 @@ inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
 }
 
 void Misc::OnSetRetryFlag(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsRetryTweaks) return;
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
@@ -70,7 +70,7 @@ static LR2::SOUNDDATA* metronomeMeasureFx;
 static LR2::SOUNDDATA* metronomeBeatFx;
 
 void Misc::OnPlayISetSelecter(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 
@@ -138,12 +138,12 @@ void Misc::OnInit(SafetyHookContext& regs) {
 }
 
 void Misc::OnInitPlay(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	misc.OnInit(regs);
 }
 
 void Misc::OnInitRetry(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	misc.OnInit(regs);
 }
 
@@ -152,7 +152,7 @@ void Misc::OnRandomMixInput(SafetyHookContext& regs) {
 	if (game.sSelect.bmsList[game.sSelect.cur_song].folderType != 9 && std::string(game.sSelect.bmsList[game.sSelect.cur_song].filepath.body) != "randomselect") return;
 	regs.ecx = 0;
 
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsRandomSelect) return;
 
 	misc.mRandSelCustomEntry = true;
@@ -271,8 +271,8 @@ void Misc::OnPlayInit() {
 }
 
 void Misc::OnSceneInitSwitch(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
-	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers.get());
 
 	switch (regs.eax) {
 	case 3:
@@ -286,7 +286,7 @@ void Misc::OnSceneInitSwitch(SafetyHookContext& regs) {
 }
 
 void Misc::OnSceneProcSwitch(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 
 	switch (regs.eax) {
 	}
@@ -303,7 +303,7 @@ void Misc::OnPlayExit() {
 }
 
 void Misc::OnSceneExitSwitch(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 
 	switch (regs.edi) {
 	case 2:
@@ -316,7 +316,7 @@ void Misc::OnSceneExitSwitch(SafetyHookContext& regs) {
 }
 
 void Misc::StartRandomFromFolder() {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsRandomSelect) return;
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
@@ -358,7 +358,7 @@ static void AddRandomSelectBar(const char* title, const char* tag = "") {
 }
 
 void Misc::OnOpenFolderPlaySound(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsRandomSelect) return;
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
@@ -374,7 +374,7 @@ void Misc::OnOpenFolderPlaySound(SafetyHookContext& regs) {
 
 static std::unordered_map<double, int> bpmRefcount;
 void Misc::OnAddToAvgBpmSum(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsMainBPM) return;
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
@@ -395,7 +395,7 @@ void Misc::OnAddToAvgBpmSum(SafetyHookContext& regs) {
 }
 
 void Misc::OnCalcAvgSpeedmult(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsMainBPM) return;
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
@@ -451,7 +451,7 @@ void Misc::OnCalcAvgSpeedmult(SafetyHookContext& regs) {
 static double measureSize = 0;
 static int beatsPerMeasure = 0;
 void Misc::OnDrawNotesGetSongtimer(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsMetronome) return;
 
 	double songtimer = 0;
@@ -497,7 +497,7 @@ static std::wstring s2ws(const std::string& str)
 typedef int(__cdecl* tSaveDrawScreenToPNG)(int x1, int y1, int x2, int y2, const char* FileName, int CompressionLevel);
 tSaveDrawScreenToPNG SaveDrawScreenToPNG = (tSaveDrawScreenToPNG)0x510060;
 int Misc::OnSaveDrawScreenToPNG(int x1, int y1, int x2, int y2, const char* FileName, int CompressionLevel) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	std::string directory = "screenshots\\";
 	std::string path = misc.mIsRerouteScreenshots ? directory + FileName : FileName;
 	if (misc.mIsRerouteScreenshots && !std::filesystem::directory_entry(directory).exists())
@@ -592,7 +592,7 @@ void Misc::MirrorGearshift(bool mirror) {
 void Misc::OnBeforeAddDrawingBuffer_LN(SafetyHookContext& regs) {
 	uintptr_t** offset1 = (uintptr_t**)(regs.esp + 0x68);
 	uintptr_t* offset2 = (uintptr_t*)(regs.esp + 0xA0);
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	misc.mCurrentDrawingLNObj = (void*)(**offset1 + *offset2);
 }
 
@@ -715,7 +715,7 @@ int Misc::OnAddDrawingBuffer_LN_Fixed(void* drbIn, void* srcLsIn, void* srcLeIn,
 }
 
 int Misc::OnAddDrawingBuffer_LN(void* drb, void* srcLs, void* srcLe, void* srcLb, void* dst, void* T, float shiftX, float shiftY, float longY, int alpha, float sizeX, float sizeY) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (misc.mIsLNAnimFix && misc.mCurrentDrawingLNObj) {
 		void* lnObj = misc.mCurrentDrawingLNObj;
 		misc.mCurrentDrawingLNObj = nullptr;
@@ -725,7 +725,7 @@ int Misc::OnAddDrawingBuffer_LN(void* drb, void* srcLs, void* srcLe, void* srcLb
 }
 
 void Misc::OnAutoadjustDec(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsAutoadjustClamp) return;
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
@@ -734,7 +734,7 @@ void Misc::OnAutoadjustDec(SafetyHookContext& regs) {
 }
 
 void Misc::OnAutoadjustInc(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsAutoadjustClamp) return;
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
@@ -796,7 +796,7 @@ int Misc::OnSetObjectString(unsigned int num, void* string, void** objectList) {
 #include <Helpers/Helpers.hpp>
 safetyhook::InlineHook oSetFirstSkins;
 int Misc::OnSetFirstSkins(void* g) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsCourseResultFix) return oSetFirstSkins.ccall<int>(g);
 
 	LR2::game& game = *(LR2::game*)g;
@@ -816,7 +816,7 @@ int Misc::OnSetFirstSkins(void* g) {
 }
 
 void Misc::OnWriteConfigXml(SafetyHookContext& regs) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc);
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsCourseResultFix) return;
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
@@ -871,7 +871,7 @@ void Misc::LoadConfig() {
 	mAutoadjustClampMin = config.ReadValue("iAutoadjustClampMin", mAutoadjustClampMin);
 	mAutoadjustClampMax = config.ReadValue("iAutoadjustClampMax", mAutoadjustClampMax);
 
-	((AnalogInput*)LR2HackBox::Get().mAnalogInput)->SetEnabled(mIsAnalogInput);
+	((AnalogInput*)LR2HackBox::Get().mAnalogInput.get())->SetEnabled(mIsAnalogInput);
 	MirrorGearshift(mIsMirrorGearshift);
 	SetAutoadjustReset(mIsAutoadjustReset);
 	SetSkipResultWaitIR(mIsSkipResultWaitIR);
@@ -1028,13 +1028,13 @@ void Misc::Menu() {
 
 	if (ImGui::Checkbox("Analog scratch support", &mIsAnalogInput)) {
 		config.WriteValueAndSave("bAnalogInput", mIsAnalogInput);
-		((AnalogInput*)LR2HackBox::Get().mAnalogInput)->SetEnabled(mIsAnalogInput);
+		((AnalogInput*)LR2HackBox::Get().mAnalogInput.get())->SetEnabled(mIsAnalogInput);
 	}
 	ImGui::SameLine();
 	HelpMarker("Lets you select a device and axis to use for scratch input. While enabled, set axis should be unbound in LR2 input settings");
 
 	if (mIsAnalogInput) {
-		((AnalogInput*)LR2HackBox::Get().mAnalogInput)->Menu();
+		LR2HackBox::Get().mAnalogInput->Menu();
 	}
 
 	/*if (ImGui::Button("Start Random Song")) {

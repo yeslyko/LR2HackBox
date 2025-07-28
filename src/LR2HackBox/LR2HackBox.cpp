@@ -39,7 +39,8 @@ bool LR2HackBox::EarlyHook() {
 
 	mLogger.SetPath("./LR2HackBox.log");
 
-	mConfig = new ConfigManager("LR2HackBox.ini");
+	
+	mConfig.reset(new ConfigManager("LR2HackBox.ini"));
 
 	LoadConfig();
 
@@ -49,14 +50,14 @@ bool LR2HackBox::EarlyHook() {
 
 	MH_Initialize();
 
-	IFMEMORYTRACKER(mMemoryTracker = new MemoryTracker());
+	IFMEMORYTRACKER(mMemoryTracker.reset(new MemoryTracker()));
 	IFMEMORYTRACKER(mMemoryTracker->Init(mModuleBase));
 
-	mUnrandomizer = new Unrandomizer();
-	mFunny = new Funny();
-	mMisc = new Misc();
-	mAnalogInput = new AnalogInput();
-	mNumbers = new Numbers();
+	mUnrandomizer.reset(new Unrandomizer());
+	mFunny.reset(new Funny());
+	mMisc.reset(new Misc());
+	mAnalogInput.reset(new AnalogInput());
+	mNumbers.reset(new Numbers());
 
 	mUnrandomizer->EarlyInit(mModuleBase);
 	mFunny->EarlyInit(mModuleBase);
@@ -94,13 +95,6 @@ bool LR2HackBox::Unhook() {
 	mAnalogInput->Deinit();
 	mNumbers->Deinit();
 	IFMEMORYTRACKER(mMemoryTracker->Deinit());
-	delete(mConfig);
-	delete(mUnrandomizer);
-	delete(mFunny);
-	delete(mMisc);
-	delete(mAnalogInput);
-	delete(mNumbers);
-	IFMEMORYTRACKER(delete(mMemoryTracker));
 	return true;
 }
 
@@ -185,19 +179,19 @@ void LR2HackBoxMenu::Loop() {
 	IFSHOWIMGUIDEMO(ImGui::Checkbox("Show Demo", &mIsDemoMenu));
 
 	if (ImGui::CollapsingHeader("Unrandomizer")) {
-		((Unrandomizer*)LR2HackBox::Get().mUnrandomizer)->Menu();
+		LR2HackBox::Get().mUnrandomizer->Menu();
 	}
 
 	if (ImGui::CollapsingHeader("Miscellaneous")) {
-		((Misc*)LR2HackBox::Get().mMisc)->Menu();
+		LR2HackBox::Get().mMisc->Menu();
 	}
 
 	if (ImGui::CollapsingHeader("Funny")) {
-		((Funny*)LR2HackBox::Get().mFunny)->Menu();
+		LR2HackBox::Get().mFunny->Menu();
 	}
 
 	if (ImGui::CollapsingHeader("Numbers")) {
-		((Numbers*)LR2HackBox::Get().mNumbers)->Menu();
+		LR2HackBox::Get().mNumbers->Menu();
 	}
 
 	if (ImGui::CollapsingHeader("Settings")) {
@@ -206,7 +200,7 @@ void LR2HackBoxMenu::Loop() {
 
 	IFMEMORYTRACKER(
 		if (ImGui::CollapsingHeader("MemoryTracker")) {
-			((MemoryTracker*)LR2HackBox::Get().mMemoryTracker)->Menu();
+			LR2HackBox::Get().mMemoryTracker->Menu();
 		}
 	)
 
@@ -304,7 +298,7 @@ void LR2HackBoxMenu::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM l
 			LR2HackBoxMenu::ToggleOpen();
 		}
 		if (wParam == mMenuBindings["Stats Open"].vKey) {
-			((Numbers*)LR2HackBox::Get().mNumbers)->ToggleColumnStatsMenu();
+			((Numbers*)LR2HackBox::Get().mNumbers.get())->ToggleColumnStatsMenu();
 		}
 
 		if (mMenuBindingAwaitsRebind.second) {

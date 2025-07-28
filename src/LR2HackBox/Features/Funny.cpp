@@ -8,7 +8,7 @@
 #include "imgui/imgui.h"
 
 void Funny::OnDrawNote(SafetyHookContext& regs) {
-	Funny& funny = *(Funny*)(LR2HackBox::Get().mFunny);
+	Funny& funny = *(Funny*)(LR2HackBox::Get().mFunny.get());
 	if (!funny.mIsInvisibleScratch) return;
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
@@ -50,7 +50,7 @@ void Funny::Menu() {
 	HelpMarker("When enabled, will stop scratch notes from rendering.");
 
 	if (ImGui::Checkbox("Metronome", &mIsMetronome)) {
-		((Misc*)LR2HackBox::Get().mMisc)->SetMetronome(mIsMetronome);
+		((Misc*)LR2HackBox::Get().mMisc.get())->SetMetronome(mIsMetronome);
 	}
 	ImGui::SameLine();
 	HelpMarker("Enables the metronome sound in playing.\n  Expects 'metronome-measure.wav' and 'metronome-beat.wav'\n  in LR2files\\Sound\\LR2HackBox\\ directory\n  or defaults to using f-open and f-close");
