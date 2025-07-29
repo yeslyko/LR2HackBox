@@ -14,6 +14,9 @@ public:
 
 	void Menu();
 
+	template<typename T>
+	static bool SqliteGetColumn(T* output, std::string querry, int columnIdx);
+
 private:
 	void LoadConfig();
 	void SetHooks();
@@ -32,6 +35,9 @@ private:
 	static void OnSceneExitSwitch(SafetyHookContext& regs);
 	static void OnOpenFolderPlaySound(SafetyHookContext& regs);
 	void OnDecideInit();
+	void OnPlayInit();
+	void OnResultInit();
+	void OnCourseResultInit();
 	void OnSelectExit();
 	void OnPlayExit();
 
@@ -43,7 +49,6 @@ private:
 	std::unordered_map<double, int> mMainBPMBpmRefcount;
 
 	static void OnDrawNotesGetSongtimer(SafetyHookContext& regs);
-	void OnPlayInit();
 
 	int mMetronomeLastPlayedBeat = 0;
 	int mMetronomePrevMeasureIdx = -1;

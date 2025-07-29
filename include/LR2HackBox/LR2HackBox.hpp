@@ -72,6 +72,7 @@ public:
 	std::unique_ptr<ModFeature> mAnalogInput;
 	std::unique_ptr<ModFeature> mNumbers;
 	std::unique_ptr<ModFeature> mGameOptions;
+	std::unique_ptr<ModFeature> mScoreCannon;
 	IFMEMORYTRACKER(std::unique_ptr<ModFeature> mMemoryTracker);
 
 	std::unique_ptr<ConfigManager> mConfig;

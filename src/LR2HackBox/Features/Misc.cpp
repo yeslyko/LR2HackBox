@@ -10,6 +10,7 @@
 #include "LR2HackBox/LR2HackBox.hpp"
 #include "AnalogInput.hpp"
 #include "Numbers.hpp"
+#include "ScoreCannon.hpp"
 
 #include "ImGuiInjector/ImGuiInjector.hpp"
 #include <safetyhook.hpp>
@@ -28,6 +29,43 @@ template <typename T>
 inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
 {
 	return MH_CreateHook(pTarget, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
+}
+
+static void SqliteGetColumn(std::string* output, void* pStmt, int columnIdx) {
+	typedef LR2::CSTR(__cdecl* tSQL_GetColumn)(int i, void* pStmt);
+	tSQL_GetColumn SQL_GetColumn = (tSQL_GetColumn)0x4444F0;
+	output->assign(SQL_GetColumn(columnIdx, pStmt).body);
+}
+
+static void SqliteGetColumn(int* output, void* pStmt, int columnIdx) {
+	typedef int(__cdecl* tsqlite3_column_int)(void* pStmt, int iCol);
+	tsqlite3_column_int sqlite3_column_int = (tsqlite3_column_int)0x47AEC0;
+	*output = sqlite3_column_int(pStmt, columnIdx);
+}
+
+template<typename T>
+bool Misc::SqliteGetColumn(T* output, std::string querry, int columnIdx) {
+	typedef int(__cdecl* tSQL_Prepare)(LR2::CSTR queryStr, void* sql, void** ppStmt);
+	tSQL_Prepare SQL_Prepare = (tSQL_Prepare)0x4443f0;
+
+	typedef int(__cdecl* tsqlite3_step)(void* stmt);
+	tsqlite3_step sqlite3_step = (tsqlite3_step)0x48C480;
+
+	typedef int(__cdecl* tsqlite3_finalize)(void* stmt);
+	tsqlite3_finalize sqlite3_finalize = (tsqlite3_finalize)0x485FD0;
+
+	void* sqlite = LR2HackBox::Get().GetSqlite();
+	void* pStmt;
+	bool success = false;
+
+	SQL_Prepare(querry.c_str(), sqlite, &pStmt);
+	if (sqlite3_step(pStmt) == 100) {
+		::SqliteGetColumn(output, pStmt, columnIdx);
+		success = true;
+	}
+	sqlite3_finalize(pStmt);
+
+	return success;
 }
 
 void Misc::OnSetRetryFlag(SafetyHookContext& regs) {
@@ -197,7 +235,7 @@ static void FillBMSMETA(LR2::BMSMETA& meta, const LR2::SONGDATA& song) {
 	meta.filepath.assign(song.filepath.body);
 	meta.subartist.assign(song.subartist.body);
 	meta.title.assign(song.title.body);
-	meta.subtitle.assign(song.title.body);
+	meta.subtitle.assign(song.subtitle.body);
 
 	meta.selLevel = song.level;
 	meta.exlevel = song.exlevel;
@@ -212,38 +250,16 @@ void Misc::OnDecideInit() {
 	if (!mIsRandomSelect) return;
 	if (!mRandSelCustomEntry) return;
 
-	LR2::CSTR querry(0);
-	std::string querryStr = std::format("{} {} ORDER BY random() LIMIT 1", game.sSelect.stack_query[game.sSelect.cur].body, game.sSelect.bmsList[game.sSelect.cur_song].tag.body);
+	std::string querry = std::format("{} {} ORDER BY random() LIMIT 1", game.sSelect.stack_query[game.sSelect.cur].body, game.sSelect.bmsList[game.sSelect.cur_song].tag.body);
+	std::string songhash;
 
-	querry.assign(querryStr.c_str());
-
-	typedef int(__cdecl* tSQL_Prepare)(LR2::CSTR queryStr, void* sql, void** ppStmt);
-	tSQL_Prepare SQL_Prepare = (tSQL_Prepare)0x4443f0;
-
-	typedef LR2::CSTR(__cdecl* tSQL_GetColumn)(int i, void* pStmt);
-	tSQL_GetColumn SQL_GetColumn = (tSQL_GetColumn)0x4444F0;
-
-	typedef int(__cdecl* tsqlite3_step)(void* stmt);
-	tsqlite3_step sqlite3_step = (tsqlite3_step)0x48C480;
-
-	typedef int(__cdecl* tsqlite3_finalize)(void* stmt);
-	tsqlite3_finalize sqlite3_finalize = (tsqlite3_finalize)0x485FD0;
-
-	void* pStmt;
-	LR2::CSTR songhash;
-
-	int prepareRes = SQL_Prepare(querry, sqlite, &pStmt);
-	if (sqlite3_step(pStmt) == 100) {
-		songhash.assign(SQL_GetColumn(0, pStmt).body);
-	}
-	sqlite3_finalize(pStmt);
-
-	for (int i = 0; i < game.sSelect.bmsListCount; i++) {
-		if (std::string_view(songhash.body) == game.sSelect.bmsList[i].hash.body) {
-			game.sSelect.cur_song = i;
-			break;
+	if (SqliteGetColumn(&songhash, querry, 0)) {
+		for (int i = 0; i < game.sSelect.bmsListCount; i++) {
+			if (songhash == game.sSelect.bmsList[i].hash.body) {
+				game.sSelect.cur_song = i;
+				break;
+			}
 		}
-		game.sSelect.cur_song = game.sSelect.bmsListCount - 1;
 	}
 
 	FillBMSMETA(game.sSelect.metaSelected, game.sSelect.bmsList[game.sSelect.cur_song]);
@@ -254,6 +270,10 @@ void Misc::OnDecideInit() {
 
 void Misc::OnPlayInit() {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
+	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers.get());
+
+	numbers.SceneInit();
+
 	mOrigGaugeType = game.config.play.gaugeOption[0];
 	mCurrentDrawingLNObj = nullptr;
 
@@ -270,6 +290,16 @@ void Misc::OnPlayInit() {
 	}
 }
 
+void Misc::OnResultInit() {
+	ScoreCannon& spammer = *(ScoreCannon*)LR2HackBox::Get().mScoreCannon.get();
+	spammer.mAlreadySent = false;
+}
+
+void Misc::OnCourseResultInit() {
+	ScoreCannon& spammer = *(ScoreCannon*)LR2HackBox::Get().mScoreCannon.get();
+	spammer.mAlreadySent = false;
+}
+
 void Misc::OnSceneInitSwitch(SafetyHookContext& regs) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers.get());
@@ -280,7 +310,12 @@ void Misc::OnSceneInitSwitch(SafetyHookContext& regs) {
 		break;
 	case 4:
 		misc.OnPlayInit();
-		numbers.SceneInit();
+		break;
+	case 5:
+		misc.OnResultInit();
+		break;
+	case 13:
+		misc.OnCourseResultInit();
 		break;
 	}
 }
@@ -498,6 +533,14 @@ typedef int(__cdecl* tSaveDrawScreenToPNG)(int x1, int y1, int x2, int y2, const
 tSaveDrawScreenToPNG SaveDrawScreenToPNG = (tSaveDrawScreenToPNG)0x510060;
 int Misc::OnSaveDrawScreenToPNG(int x1, int y1, int x2, int y2, const char* FileName, int CompressionLevel) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+	LR2::game& game = *LR2HackBox::Get().GetGame();
+	if (game.procSelecter == 5 || game.procSelecter == 13) {
+		ScoreCannon& spammer = *(ScoreCannon*)LR2HackBox::Get().mScoreCannon.get();
+		if (spammer.mIsEnabled && !spammer.mAlreadySent) {
+			ScoreCannon::Score score(&game);
+			spammer.PostScore(score);
+		}
+	}
 	std::string directory = "screenshots\\";
 	std::string path = misc.mIsRerouteScreenshots ? directory + FileName : FileName;
 	if (misc.mIsRerouteScreenshots && !std::filesystem::directory_entry(directory).exists())

@@ -18,6 +18,7 @@
 #include "Features/Numbers.hpp"
 #include "Features/Version.hpp"
 #include "Features/GameOptions.hpp"
+#include "Features/ScoreCannon.hpp"
 
 #pragma comment(lib, "Helpers.lib")
 #pragma comment(lib, "ImGuiInjector.lib")
@@ -60,6 +61,7 @@ bool LR2HackBox::EarlyHook() {
 	mAnalogInput.reset(new AnalogInput());
 	mNumbers.reset(new Numbers());
 	mGameOptions.reset(new GameOptions());
+	mScoreCannon.reset(new ScoreCannon());
 
 	mUnrandomizer->EarlyInit(mModuleBase);
 	mFunny->EarlyInit(mModuleBase);
@@ -67,6 +69,7 @@ bool LR2HackBox::EarlyHook() {
 	mAnalogInput->EarlyInit(mModuleBase);
 	mNumbers->EarlyInit(mModuleBase);
 	mGameOptions->EarlyInit(mModuleBase);
+	mScoreCannon->EarlyInit(mModuleBase);
 
 	return true;
 }
@@ -88,6 +91,7 @@ bool LR2HackBox::Hook() {
 	mAnalogInput->Init(mModuleBase);
 	mNumbers->Init(mModuleBase);
 	mGameOptions->Init(mModuleBase);
+	mScoreCannon->Init(mModuleBase);
 
 	return true;
 }
@@ -99,6 +103,7 @@ bool LR2HackBox::Unhook() {
 	mAnalogInput->Deinit();
 	mNumbers->Deinit();
 	mGameOptions->Deinit();
+	mScoreCannon->Deinit();
 	IFMEMORYTRACKER(mMemoryTracker->Deinit());
 	return true;
 }
@@ -197,6 +202,10 @@ void LR2HackBoxMenu::Loop() {
 
 	if (ImGui::CollapsingHeader("Numbers")) {
 		LR2HackBox::Get().mNumbers->Menu();
+	}
+
+	if (ImGui::CollapsingHeader("Discord Score Webhook")) {
+		LR2HackBox::Get().mScoreCannon->Menu();
 	}
 
 	if (ImGui::CollapsingHeader("Game Options")) {
