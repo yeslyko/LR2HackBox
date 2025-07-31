@@ -10,4 +10,6 @@ public:
 
 private:
 	std::vector<SafetyHookMid> mMidHooks;
+
+	float mIRWaitTime = 10.f;
 };

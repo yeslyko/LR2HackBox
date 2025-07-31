@@ -7,6 +7,12 @@
 
 bool GameOptions::Init(uintptr_t moduleBase) {
 	GameOptions::mModuleBase = moduleBase;
+	LR2::game& game = *LR2HackBox::Get().GetGame();
+	ConfigManager& config = *LR2HackBox::Get().mConfig;
+
+	int waitTimeMs = config.ReadValue("iGameOptionsIRWaitTime", 10000);
+	game.net.waitTime = waitTimeMs;
+	mIRWaitTime = static_cast<float>(waitTimeMs) / 1000.f;
 
 	return true;
 }
@@ -28,6 +34,7 @@ static void HelpMarker(const char* desc) {
 
 void GameOptions::Menu() {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
+	ConfigManager& config = *LR2HackBox::Get().mConfig;
 
 	ImGui::Indent();
 	const float SCALE = ImGui::GetStyle().FontScaleMain;
@@ -109,7 +116,19 @@ void GameOptions::Menu() {
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(START_X);
 	ImGui::Text("Music list");
+
+	ImGui::SetCursorPosX(COLUMN1_X);
+	if (ImGui::InputFloat("s##irwaittime", &mIRWaitTime, 0, 0, "%.1f")) {
+		int timeMs = static_cast<int>(mIRWaitTime * 1000.f);
+		game.net.waitTime = timeMs;
+		config.WriteValueAndSave("iGameOptionsIRWaitTime", timeMs);
+	}
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(START_X);
+	ImGui::Text("IR wait time");
+
 	ImGui::PopItemWidth();
+	
 
 	ImGui::Checkbox("PM controller", (bool*)&game.config.select.control);
 	ImGui::Checkbox("Assign 1/3 key to scroll", (bool*)&game.config.select.buttonselect);
