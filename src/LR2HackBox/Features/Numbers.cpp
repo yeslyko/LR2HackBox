@@ -242,8 +242,8 @@ void Numbers::ColumnStatsMenu() {
 	constexpr const int judgeRowCount = sizeof(JudgeCounter) / sizeof(int);
 	constexpr const char* notations[] = { "PGREAT:", " GREAT:", "  GOOD:", "   BAD:", "  POOR:", "E.POOR:", "  FAST:", "  SLOW:", "    CB:", "   EX%%:"};
 	static_assert(std::size(notations) == judgeRowCount);
-	ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg;
-	if (ImGui::BeginTable("JudgementCounterTable", mKeycount + 2, tableFlags, ImVec2(0.f, judgeRowCount * rowHeight + scrollHeight))) {
+	ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg;
+	if (ImGui::BeginTable("JudgementCounterTable", mKeycount + 2, tableFlags, ImVec2(0.f, static_cast<float>(judgeRowCount) * rowHeight + scrollHeight))) {
 		ImGui::TableSetupColumn("Labels", ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("PGREAT:").x);
 		for (int columnIdx = 0; columnIdx < mKeycount + 1; columnIdx++) {
 			std::string columnName = "Column##" + (columnIdx + 1);
