@@ -234,7 +234,7 @@ ScoreCannon::Score::Score(void* g) {
 	exScoreBest = game.sSelect.old.stat_exscore;
 	exScoreTarget = game.gameplay.targetScore.exscore;
 	missCount = game.gameplay.player[0].judgecount[1] + game.gameplay.player[0].judgecount[2] + game.gameplay.player[0].totalnotes - game.gameplay.player[0].note_current;
-	missCountBest = game.sSelect.old.minbp;
+	missCountBest = game.sSelect.old.playcount <= 0 ? 0 : game.sSelect.old.minbp;
 }
 
 void ScoreCannon::LoadUrlList() {
