@@ -154,7 +154,7 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 			{"fields", {
 				{
 					{"name", std::format("Rank: {} ({:.2f}%) {}", grades[GetExGrade(score.exScore, score.exScoreMax)], GetExPercentage(score.exScore, score.exScoreMax), GetDeltaNotation(GetExGrade(score.exScore, score.exScoreMax), GetExGrade(score.exScoreBest, score.exScoreMax)))},
-					{"value", score.target == Score::Target::PERCENT ? std::format("Target: {:.2f}%, ({})", GetExPercentage(score.exScoreTarget, score.exScoreMax), GetDelta(score.exScore, score.exScoreTarget))
+					{"value", score.target == Score::Target::PERCENT ? std::format("Target: {:.0f}%, ({})", GetExPercentage(score.exScoreTarget, score.exScoreMax), GetDelta(score.exScore, score.exScoreTarget))
 																	 : std::format("Target: {} ({})", targets[score.target], GetDelta(score.exScore, score.exScoreTarget))
 					}
 				},
@@ -228,7 +228,7 @@ ScoreCannon::Score::Score(void* g) {
 	}
 	lamp = Lamp(game.gameplay.player[0].clearType);
 	lampBest = game.sSelect.old.playcount <= 0 || game.sSelect.old.stat_exscore <= 0 ? Lamp::NONE : Lamp(game.sSelect.old.clear);
-	target = Target(game.gameplay.targetType);
+	target = Target(game.config.play.p1_target);
 	exScore = game.gameplay.player[0].judgecount[5] * 2 + game.gameplay.player[0].judgecount[4];
 	exScoreMax = game.gameplay.player[0].totalnotes * 2;
 	exScoreBest = game.sSelect.old.stat_exscore;
