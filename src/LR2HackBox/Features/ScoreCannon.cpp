@@ -237,31 +237,13 @@ ScoreCannon::Score::Score(void* g) {
 	missCountBest = game.sSelect.old.playcount <= 0 ? 0 : game.sSelect.old.minbp;
 }
 
-void ScoreCannon::LoadUrlList() {
-	ConfigManager& config = *LR2HackBox::Get().mConfig;
-	std::stringstream urls(config.ReadValue("sScoreCannonDiscordWebhookUrls", std::string()));
-	std::string url;
-	while (std::getline(urls, url, ' ')) {
-		mUrls.push_back(url);
-	}
-}
-
-void ScoreCannon::SaveUrlList() {
-	ConfigManager& config = *LR2HackBox::Get().mConfig;
-	std::stringstream urls;
-	for (auto& url : mUrls) {
-		urls << url << " ";
-	}
-	config.WriteValueAndSave("sScoreCannonDiscordWebhookUrls", urls.str());
-}
-
 bool ScoreCannon::Init(uintptr_t moduleBase) {
 	ScoreCannon::mModuleBase = moduleBase;
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 	mIsEnabled = config.ReadValue("bIsScoreCannon", mIsEnabled);
 	mDiscordName = config.ReadValue("sScoreCannonDiscordName", mDiscordName);
 	mDiscordAvatarUrl = config.ReadValue("sScoreCannonDiscordAvatarUrl", mDiscordAvatarUrl);
-	LoadUrlList();
+	config.ReadArray("sScoreCannonDiscordWebhookUrls", mUrls);
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 	mGameName = s2utf(game.sSelect.playerID.body);
@@ -325,7 +307,7 @@ void ScoreCannon::Menu() {
 			}
 			if (!repeating) {
 				mUrls.push_back(mEditingUrl);
-				SaveUrlList();
+				config.WriteArrayAndSave("sScoreCannonDiscordWebhookUrls", mUrls);
 			}
 			mEditingUrl.clear();
 		}
@@ -335,7 +317,7 @@ void ScoreCannon::Menu() {
 		for (auto url = mUrls.begin(); url != mUrls.end(); url++) {
 			if (*url == mEditingUrl) {
 				mUrls.erase(url);
-				SaveUrlList();
+				config.WriteArrayAndSave("sScoreCannonDiscordWebhookUrls", mUrls);
 				break;
 			}
 		}

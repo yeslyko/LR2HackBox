@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <map>
 
 class ConfigManager {
@@ -11,7 +12,13 @@ public:
 		WriteValue(name, value);
 		SaveConfig();
 	}
+	template <typename T> void WriteArray(std::string name, const std::vector<T>& array);
+	template <typename T> void WriteArrayAndSave(std::string name, const std::vector<T>& array) {
+		WriteArray(name, array);
+		SaveConfig();
+	}
 	template <typename T> T ReadValue(std::string name, T def);
+	template <typename T> void ReadArray(std::string name, std::vector<T>& array);
 	bool ValueExists(std::string name);
 
 	void SaveConfig();

@@ -57,8 +57,6 @@ public:
 	bool mAlreadySent = false;
 private:
 	std::string GetJsonString(const Score& score);
-	void LoadUrlList();
-	void SaveUrlList();
 
 	std::vector<SafetyHookMid> mMidHooks;
 	std::string mDiscordName;

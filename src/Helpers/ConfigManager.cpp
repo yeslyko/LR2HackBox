@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <charconv>
 
 ConfigManager::ConfigManager(std::string path, bool load) {
 	ConfigManager::path = path;
@@ -37,6 +38,57 @@ void ConfigManager::WriteValue<float>(std::string name, float value) {
 template <typename T>
 void ConfigManager::WriteValue(std::string name, T value) {
 	WriteValue(name, value);
+}
+
+template <>
+void ConfigManager::WriteArray<std::string>(std::string name, const std::vector<std::string>& array) {
+	std::stringstream values;
+	for (auto& value : array) {
+		values << value << ",";
+	}
+	config[name] = values.str();
+}
+
+template <>
+void ConfigManager::WriteArray<const char*>(std::string name, const std::vector<const char*>& array) {
+	std::stringstream values;
+	for (auto& value : array) {
+		values << value << ",";
+	}
+	config[name] = values.str();
+}
+
+template <>
+void ConfigManager::WriteArray<bool>(std::string name, const std::vector<bool>& array) {
+	std::stringstream values;
+	for (const auto& value : array) {
+		std::string sValue = value ? "true" : "false";
+		values << sValue << ",";
+	}
+	config[name] = values.str();
+}
+
+template <>
+void ConfigManager::WriteArray<int>(std::string name, const std::vector<int>& array) {
+	std::stringstream values;
+	for (auto& value : array) {
+		values << value << ",";
+	}
+	config[name] = values.str();
+}
+
+template <>
+void ConfigManager::WriteArray<float>(std::string name, const std::vector<float>& array) {
+	std::stringstream values;
+	for (auto& value : array) {
+		values << value << ",";
+	}
+	config[name] = values.str();
+}
+
+template <typename T>
+void ConfigManager::WriteArray(std::string name, const std::vector<T>& array) {
+	WriteArray(name, array);
 }
 
 template <>
@@ -84,6 +136,55 @@ float ConfigManager::ReadValue(std::string name, float def) {
 template <typename T>
 T ConfigManager::ReadValue(std::string name, T def) {
 	return ReadValue(name, def);
+}
+
+template <>
+void ConfigManager::ReadArray<std::string>(std::string name, std::vector<std::string>& array) {
+	std::stringstream values(config[name]);
+	std::string value;
+	while (std::getline(values, value, ',')) {
+		array.push_back(value);
+	}
+}
+
+template <>
+void ConfigManager::ReadArray<bool>(std::string name, std::vector<bool>& array) {
+	std::stringstream values(config[name]);
+	std::string value;
+	while (std::getline(values, value, ',')) {
+		array.push_back(value == "true" ? true : false);
+	}
+}
+
+template <>
+void ConfigManager::ReadArray<int>(std::string name, std::vector<int>& array) {
+	std::stringstream values(config[name]);
+	std::string value;
+	while (std::getline(values, value, ',')) {
+		int iValue{};
+		auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), iValue);
+		if (ec == std::errc()) {
+			array.push_back(iValue);
+		}
+	}
+}
+
+template <>
+void ConfigManager::ReadArray<float>(std::string name, std::vector<float>& array) {
+	std::stringstream values(config[name]);
+	std::string value;
+	while (std::getline(values, value, ',')) {
+		float fValue{};
+		auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), fValue);
+		if (ec == std::errc()) {
+			array.push_back(fValue);
+		}
+	}
+}
+
+template <typename T>
+void ConfigManager::ReadArray(std::string name, std::vector<T>& array) {
+	ReadArray(name, array);
 }
 
 bool ConfigManager::ValueExists(std::string name) {
