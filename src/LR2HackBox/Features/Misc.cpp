@@ -1,4 +1,4 @@
-#define NOMINMAX
+﻿#define NOMINMAX
 
 #include "Misc.hpp"
 
@@ -187,13 +187,13 @@ void Misc::OnInitRetry(SafetyHookContext& regs) {
 
 void Misc::OnRandomMixInput(SafetyHookContext& regs) {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
-	if (game.sSelect.bmsList[game.sSelect.cur_song].folderType != 9 && std::string(game.sSelect.bmsList[game.sSelect.cur_song].filepath.body) != "randomselect") return;
+	if (game.sSelect.bmsList[game.sSelect.cur_song].folderType != 9 && std::string(game.sSelect.bmsList[game.sSelect.cur_song].filepath.body) != "customselect") return;
 	regs.ecx = 0;
 
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
-	if (!misc.mIsRandomSelect) return;
+	if (!misc.mIsRandomSelect && !misc.mIsCustomSelect) return;
 
-	misc.mRandSelCustomEntry = true;
+	misc.mOnCustomSelEntry = true;
 
 	game.procSelecter = 3;
 }
@@ -243,14 +243,16 @@ static void FillBMSMETA(LR2::BMSMETA& meta, const LR2::SONGDATA& song) {
 	meta.keymode = song.keymode;
 }
 
-void Misc::OnDecideInit() {
+void Misc::CustomSelect() {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
-	void* sqlite = LR2HackBox::Get().GetSqlite();
 
-	if (!mIsRandomSelect) return;
-	if (!mRandSelCustomEntry) return;
-
-	std::string querry = std::format("{} {} ORDER BY random() LIMIT 1", game.sSelect.stack_query[game.sSelect.cur].body, game.sSelect.bmsList[game.sSelect.cur_song].tag.body);
+	std::string querry;
+	if (std::string_view(game.sSelect.bmsList[game.sSelect.cur_song].tag.body).size() <= sizeof("NOTAFOLDER")) {
+		querry = std::format("{} ORDER BY {} LIMIT 1", game.sSelect.stack_query[game.sSelect.cur].body, game.sSelect.bmsList[game.sSelect.cur_song].hash.body);
+	}
+	else {
+		querry = std::format("{} AND ({}) ORDER BY {} LIMIT 1", game.sSelect.stack_query[game.sSelect.cur].body, std::string_view(game.sSelect.bmsList[game.sSelect.cur_song].tag.body).substr(sizeof("NOTAFOLDER")), game.sSelect.bmsList[game.sSelect.cur_song].hash.body);
+	}
 	std::string songhash;
 
 	if (SqliteGetColumn(&songhash, querry, 0)) {
@@ -265,7 +267,11 @@ void Misc::OnDecideInit() {
 	FillBMSMETA(game.sSelect.metaSelected, game.sSelect.bmsList[game.sSelect.cur_song]);
 	UpdateSongdataStrings();
 
-	mRandSelCustomEntry = false;
+	mOnCustomSelEntry = false;
+}
+
+void Misc::OnDecideInit() {
+	if ((mIsRandomSelect || mIsCustomSelect) && mOnCustomSelEntry) CustomSelect();
 }
 
 void Misc::OnPlayInit() {
@@ -350,32 +356,7 @@ void Misc::OnSceneExitSwitch(SafetyHookContext& regs) {
 	}
 }
 
-void Misc::StartRandomFromFolder() {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
-	if (!misc.mIsRandomSelect) return;
-
-	LR2::game& game = *LR2HackBox::Get().GetGame();
-
-	typedef int(__cdecl* tGetRand)(int RandMax);
-	tGetRand GetRand = (tGetRand)0x6C95E0;
-	int randIdx = GetRand(game.sSelect.bmsListCount - 1);
-
-	typedef int(__cdecl* tParseBMSMETA)(LR2::BMSMETA* meta, LR2::CSTR filepath, char flag);
-	tParseBMSMETA ParseBMSMETA = (tParseBMSMETA)0x4AA0B0;
-	ParseBMSMETA(&game.sSelect.metaSelected, game.sSelect.bmsList[randIdx].filepath, 0);
-
-	game.sSelect.nowBar += (randIdx - game.sSelect.cur_song) * 1000;
-	game.sSelect.oldBar = game.sSelect.listTopbar;
-	game.sSelect.prevCalculatedBar = game.sSelect.listCalculatedBar;
-	game.sSelect.listCalculatedBar = game.sSelect.nowBar;
-	game.sSelect.prevTopbar = game.sSelect.listTopbar;
-	game.sSelect.listTopbar = game.sSelect.nowBar;
-	game.sSelect.scrollDirection = 2;
-
-	game.procSelecter = 3;
-}
-
-static void AddRandomSelectBar(const char* title, const char* tag = "") {
+static void AddCustomSelectBar(const char* title, const char* condition = "", const char* order = "random()") {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 	LR2::SONGDATA bar;
 	typedef void(__cdecl* tSongDataInit)(LR2::SONGDATA* song);
@@ -384,8 +365,9 @@ static void AddRandomSelectBar(const char* title, const char* tag = "") {
 	bar.folderType = 9;
 	bar.title.assign(title);
 	bar.fulltitle.assign(title);
-	bar.filepath.assign("randomselect");
-	bar.tag.assign(tag);
+	bar.filepath.assign("customselect");
+	bar.tag.assign(("NOTAFOLDER " + std::string(condition)).c_str());
+	std::string_view(order).empty() ? bar.hash.assign("random()") : bar.hash.assign(order);
 	typedef LR2::SONGDATA*(__thiscall* tSongDataAssign)(LR2::SONGDATA* pThis, LR2::SONGDATA* other);
 	tSongDataAssign SongDataAssign = (tSongDataAssign)0x404FE0;
 	SongDataAssign(&game.sSelect.bmsList[game.sSelect.bmsListCount], &bar);
@@ -394,15 +376,20 @@ static void AddRandomSelectBar(const char* title, const char* tag = "") {
 
 void Misc::OnOpenFolderPlaySound(SafetyHookContext& regs) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
-	if (!misc.mIsRandomSelect) return;
-
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 	if (game.sSelect.stack_isFolder[game.sSelect.cur] == 0) {
-		AddRandomSelectBar("RANDOM SELECT");
-		AddRandomSelectBar("RANDOM SELECT UNPLAYED", "AND clear IS NULL");
-		AddRandomSelectBar("RANDOM SELECT FAILED", "AND clear = 1");
-		AddRandomSelectBar("RANDOM SELECT <HC", "AND (clear < 4 OR clear IS NULL)");
-		AddRandomSelectBar("RANDOM SELECT <AAA", "AND (CAST((perfect * 2 + great) AS float) / (totalnotes * 2) * 100 < 88.88 OR perfect IS NULL)");
+		if (misc.mIsRandomSelect) {
+			AddCustomSelectBar("RANDOM SELECT");
+			AddCustomSelectBar("RANDOM SELECT UNPLAYED", "clear IS NULL");
+			AddCustomSelectBar("RANDOM SELECT FAILED", "clear = 1");
+			AddCustomSelectBar("RANDOM SELECT <HC", "clear < 4 OR clear IS NULL");
+			AddCustomSelectBar("RANDOM SELECT <AAA", "CAST((perfect * 2 + great) AS float) / (totalnotes * 2) * 100 < 88.88 OR perfect IS NULL");
+		}
+		if (misc.mIsCustomSelect) {
+			for (auto& entry : misc.mCustomSelectEntries) {
+				AddCustomSelectBar(entry.title.c_str(), entry.condition.c_str(), entry.order.c_str());
+			}
+		}
 	}
 }
 
@@ -870,6 +857,39 @@ void Misc::OnWriteConfigXml(SafetyHookContext& regs) {
 	WriteXML_Tab2Str(pFile, "courseresult", game.config.skin.skinFilePath[15]);
 }
 
+void Misc::CustomSelectLoadConfig() {
+	ConfigManager& config = *LR2HackBox::Get().mConfig.get();
+	std::vector<std::string> configEntries;
+	config.ReadArray("sCustomSelectEntries", configEntries);
+	for (auto& configEntry : configEntries) {
+		std::stringstream values(configEntry);
+		std::string value;
+		CustomSelectEntry entry;
+		int valueIdx = 0;
+		while (std::getline(values, value, ';')) {
+			switch (valueIdx) {
+			case 0: entry.title = value; break;
+			case 1: entry.condition = value; break;
+			case 2: entry.order = value; break;
+			}
+			valueIdx++;
+		}
+		mCustomSelectEntries.push_back(entry);
+	}
+	mSelectedCustomSelectEntry = mCustomSelectEntries.end();
+}
+
+void Misc::CustomSelectSaveConfig() {
+	ConfigManager& config = *LR2HackBox::Get().mConfig.get();
+	std::vector<std::string> configEntries;
+	for (auto& entry : mCustomSelectEntries) {
+		std::stringstream entryString;
+		entryString << entry.title << ";" << entry.condition << ";" << entry.order;
+		configEntries.push_back(entryString.str());
+	}
+	config.WriteArrayAndSave("sCustomSelectEntries", configEntries);
+}
+
 bool Misc::EarlyInit(uintptr_t moduleBase) {
 	Misc::mModuleBase = moduleBase;
 
@@ -900,6 +920,7 @@ void Misc::LoadConfig() {
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 	mIsRetryTweaks = config.ReadValue("bRetryTweaks", mIsRetryTweaks);
 	mIsRandomSelect = config.ReadValue("bRandomSelect", mIsRandomSelect);
+	mIsCustomSelect = config.ReadValue("bCustomSelect", mIsCustomSelect);
 	mIsMainBPM = config.ReadValue("bMainBPM", mIsMainBPM);
 	mIsRerouteScreenshots = config.ReadValue("bRerouteScreenshots", mIsRerouteScreenshots);
 	mIsScreenshotsCopybuffer = config.ReadValue("bScreenshotsCopybuffer", mIsScreenshotsCopybuffer);
@@ -913,6 +934,8 @@ void Misc::LoadConfig() {
 	mIsSkipResultSub = config.ReadValue("bSkipResultSub", mIsSkipResultSub);
 	mAutoadjustClampMin = config.ReadValue("iAutoadjustClampMin", mAutoadjustClampMin);
 	mAutoadjustClampMax = config.ReadValue("iAutoadjustClampMax", mAutoadjustClampMax);
+
+	CustomSelectLoadConfig();
 
 	((AnalogInput*)LR2HackBox::Get().mAnalogInput.get())->SetEnabled(mIsAnalogInput);
 	MirrorGearshift(mIsMirrorGearshift);
@@ -978,6 +1001,123 @@ static void HelpMarker(const char* desc) {
 	}
 }
 
+void Misc::CustomSelectMenu() {
+	if (ImGui::TreeNode("Custom Select setup")) {
+		char title[64];
+		char condition[256];
+		char order[256];
+		memset(title, 0, sizeof(title));
+		memset(condition, 0, sizeof(condition));
+		memset(order, 0, sizeof(order));
+		memcpy(title, mEditingCustomSelectEntry.title.data(), std::min(mEditingCustomSelectEntry.title.size(), sizeof(title)));
+		memcpy(condition, mEditingCustomSelectEntry.condition.data(), std::min(mEditingCustomSelectEntry.condition.size(), sizeof(condition)));
+		memcpy(order, mEditingCustomSelectEntry.order.data(), std::min(mEditingCustomSelectEntry.order.size(), sizeof(order)));
+		
+		ImGui::Text("Title:");
+		ImGui::SameLine();
+		if (ImGui::InputText("##title", title, sizeof(title))) {
+			mEditingCustomSelectEntry.title = title;
+		}
+
+		ImGui::Text("SELECT hash WHERE");
+		ImGui::SameLine();
+		HelpMarker("Can be empty, then only order will be used.");
+		ImGui::SameLine();
+		if (ImGui::InputText("##condition", condition, sizeof(condition))) {
+			mEditingCustomSelectEntry.condition = condition;
+		}
+
+		ImGui::Text("ORDER BY");
+		ImGui::SameLine();
+		HelpMarker("Can be empty. Defaults to 'random()'.");
+		ImGui::SameLine();
+		if (ImGui::InputText("##order", order, sizeof(order))) {
+			mEditingCustomSelectEntry.order = order;
+		}
+
+		if (mSelectedCustomSelectEntry != mCustomSelectEntries.end()) {
+			if (ImGui::Button("Save") && !mEditingCustomSelectEntry.title.empty()) {
+				*mSelectedCustomSelectEntry = mEditingCustomSelectEntry;
+				mSelectedCustomSelectEntry = mCustomSelectEntries.end();
+				mEditingCustomSelectEntry = CustomSelectEntry();
+				CustomSelectSaveConfig();
+			}
+		}
+		else {
+			if (ImGui::Button("Add") && !mEditingCustomSelectEntry.title.empty()) {
+				mCustomSelectEntries.push_back(mEditingCustomSelectEntry);
+				mSelectedCustomSelectEntry = mCustomSelectEntries.end();
+				mEditingCustomSelectEntry = CustomSelectEntry();
+				CustomSelectSaveConfig();
+			}
+		}
+
+		int flags = ImGuiTableFlags(ImGuiTableFlags_ScrollY) | ImGuiTableFlags(ImGuiTableFlags_RowBg)
+			| ImGuiTableFlags(ImGuiTableFlags_BordersOuter) | ImGuiTableFlags(ImGuiTableFlags_Resizable)
+			| ImGuiTableFlags(ImGuiTableFlags_SizingStretchSame);
+		float outer_size = ImGui::GetTextLineHeightWithSpacing() * 4;
+		if (ImGui::BeginTable("CustomSelectTable", 2, flags, ImVec2(0, outer_size))) {
+
+			ImGui::TableSetupScrollFreeze(0, 1);
+			ImGui::TableSetupColumn("Name");
+			ImGui::TableSetupColumn("Buttons");
+
+			decltype(mCustomSelectEntries.begin()) toDelete = mCustomSelectEntries.end();
+			for (auto it = mCustomSelectEntries.begin(); it != mCustomSelectEntries.end(); it++) {
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				std::string sRowIdx = std::to_string(ImGui::TableGetRowIndex());
+				ImGui::Text(it->title.c_str());
+				if (ImGui::IsItemHovered()) {
+					ImGui::TableSetBgColor(ImGuiTableBgTarget(ImGuiTableBgTarget_CellBg), IM_COL32(110, 90, 20, 255));
+					if (ImGui::IsMouseDoubleClicked(0)) {
+						mSelectedCustomSelectEntry = it;
+						mEditingCustomSelectEntry = *it;
+					}
+				}
+				ImGui::TableSetColumnIndex(1);
+				std::string deleteButtonId = "-##" + sRowIdx;
+				if (ImGui::Button(deleteButtonId.c_str())) {
+					toDelete = it;
+					if (mSelectedCustomSelectEntry != mCustomSelectEntries.end())
+						mEditingCustomSelectEntry = CustomSelectEntry();
+				}
+				if (ImGui::TableGetRowIndex() != 0) {
+					ImGui::SameLine();
+					
+					std::string upButtonId = "up##" + sRowIdx;
+					if (ImGui::ArrowButton(upButtonId.c_str(), ImGuiDir_Up)) {
+						auto other = it - 1;
+						std::swap(*it, *other);
+						if (mSelectedCustomSelectEntry != mCustomSelectEntries.end())
+							mSelectedCustomSelectEntry = other;
+						CustomSelectSaveConfig();
+					}
+				}
+				if (ImGui::TableGetRowIndex() != mCustomSelectEntries.size() - 1) {
+					ImGui::SameLine();
+					std::string downButtonId = "down##" + sRowIdx;
+					if (ImGui::ArrowButton(downButtonId.c_str(), ImGuiDir_Down)) {
+						auto other = it + 1;
+						std::swap(*it, *other);
+						if (mSelectedCustomSelectEntry != mCustomSelectEntries.end())
+							mSelectedCustomSelectEntry = other;
+						CustomSelectSaveConfig();
+					}
+				}
+			}
+			if (toDelete != mCustomSelectEntries.end()) {
+				mCustomSelectEntries.erase(toDelete);
+				mSelectedCustomSelectEntry = mCustomSelectEntries.end();
+				CustomSelectSaveConfig();
+			}
+			ImGui::EndTable();
+		}
+		ImGui::TreePop();
+	}
+	
+}
+
 void Misc::Menu() {
 	LR2::game* game = LR2HackBox::Get().GetGame();
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
@@ -996,6 +1136,16 @@ void Misc::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("Adds an assortment of 'RANDOM SELECT' entries to song folder, which starts a random song matching the filter from it.\n\nFilters are 'UNPLAYED', 'FAILED', '<HC', '<AAA'.");
+
+	if (ImGui::Checkbox("Custom Select", &mIsCustomSelect)) {
+		config.WriteValueAndSave("bCustomSelect", mIsCustomSelect);
+	}
+	ImGui::SameLine();
+	HelpMarker("Requires understanding of SQL querries. Allows creating customized entries to song folder, similar to Random Select feature, with 'song' and left-joined 'score' tables available.");
+
+	if (mIsCustomSelect) {
+		CustomSelectMenu();
+	}
 
 	if (ImGui::Checkbox("MainBPM hi-speed mode", &mIsMainBPM)) {
 		config.WriteValueAndSave("bMainBPM", mIsMainBPM);

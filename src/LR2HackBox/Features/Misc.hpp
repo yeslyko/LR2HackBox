@@ -18,6 +18,11 @@ public:
 	static bool SqliteGetColumn(T* output, std::string querry, int columnIdx);
 
 private:
+	struct CustomSelectEntry {
+		std::string title;
+		std::string condition;
+		std::string order;
+	};
 	void LoadConfig();
 	void SetHooks();
 
@@ -41,7 +46,14 @@ private:
 	void OnSelectExit();
 	void OnPlayExit();
 
-	bool mRandSelCustomEntry = false;
+	void CustomSelect();
+	void CustomSelectMenu();
+	void CustomSelectLoadConfig();
+	void CustomSelectSaveConfig();
+	bool mOnCustomSelEntry = false;
+	std::vector<CustomSelectEntry> mCustomSelectEntries;
+	decltype(mCustomSelectEntries.begin()) mSelectedCustomSelectEntry = mCustomSelectEntries.end();
+	CustomSelectEntry mEditingCustomSelectEntry;
 
 	static void OnAddToAvgBpmSum(SafetyHookContext& regs);
 	static void OnCalcAvgSpeedmult(SafetyHookContext& regs);
@@ -76,8 +88,6 @@ private:
 
 	int mAutoadjustResetLastVal = 0;
 
-	void StartRandomFromFolder();
-
 	void MirrorGearshift(bool mirror);
 
 	void SetSkipResultWaitIR(bool value);
@@ -87,6 +97,7 @@ private:
 
 	bool mIsRetryTweaks = false;
 	bool mIsRandomSelect = false;
+	bool mIsCustomSelect = false;
 	bool mIsMainBPM = false;
 	bool mIsMetronome = false;
 	bool mIsRerouteScreenshots = false;
