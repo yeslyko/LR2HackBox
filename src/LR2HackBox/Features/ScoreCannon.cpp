@@ -329,8 +329,6 @@ void ScoreCannon::Menu() {
 		| ImGuiTableFlags(ImGuiTableFlags_SizingStretchSame);
 	float outer_size = ImGui::GetTextLineHeightWithSpacing() * 4;
 	if (ImGui::BeginTable("ScoreCannonUrls", 1, flags, ImVec2(0, outer_size))) {
-
-		ImGui::TableSetupScrollFreeze(0, 1);
 		ImGui::TableSetupColumn("Current Webhook URL List");
 		ImGui::TableHeadersRow();
 
