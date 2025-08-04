@@ -191,7 +191,7 @@ void Misc::OnRandomMixInput(SafetyHookContext& regs) {
 	regs.ecx = 0;
 
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
-	if (!misc.mIsRandomSelect && !misc.mIsCustomSelect) return;
+	if (!misc.mIsCustomSelect) return;
 
 	misc.mOnCustomSelEntry = true;
 
@@ -271,7 +271,7 @@ void Misc::CustomSelect() {
 }
 
 void Misc::OnDecideInit() {
-	if ((mIsRandomSelect || mIsCustomSelect) && mOnCustomSelEntry) CustomSelect();
+	if (mIsCustomSelect && mOnCustomSelEntry) CustomSelect();
 }
 
 void Misc::OnPlayInit() {
@@ -376,19 +376,12 @@ static void AddCustomSelectBar(const char* title, const char* condition = "", co
 
 void Misc::OnOpenFolderPlaySound(SafetyHookContext& regs) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+	if (!misc.mIsCustomSelect) return;
+
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 	if (game.sSelect.stack_isFolder[game.sSelect.cur] == 0) {
-		if (misc.mIsRandomSelect) {
-			AddCustomSelectBar("RANDOM SELECT");
-			AddCustomSelectBar("RANDOM SELECT UNPLAYED", "clear IS NULL");
-			AddCustomSelectBar("RANDOM SELECT FAILED", "clear = 1");
-			AddCustomSelectBar("RANDOM SELECT <HC", "clear < 4 OR clear IS NULL");
-			AddCustomSelectBar("RANDOM SELECT <AAA", "CAST((perfect * 2 + great) AS float) / (totalnotes * 2) * 100 < 88.88 OR perfect IS NULL");
-		}
-		if (misc.mIsCustomSelect) {
-			for (auto& entry : misc.mCustomSelectEntries) {
-				AddCustomSelectBar(entry.title.c_str(), entry.condition.c_str(), entry.order.c_str());
-			}
+		for (auto& entry : misc.mCustomSelectEntries) {
+			AddCustomSelectBar(entry.title.c_str(), entry.condition.c_str(), entry.order.c_str());
 		}
 	}
 }
@@ -857,8 +850,22 @@ void Misc::OnWriteConfigXml(SafetyHookContext& regs) {
 	WriteXML_Tab2Str(pFile, "courseresult", game.config.skin.skinFilePath[15]);
 }
 
+void Misc::CustomSelectAddDefault() {
+	std::array<CustomSelectEntry, 5> defaults{
+		CustomSelectEntry("RANDOM SELECT"),
+		CustomSelectEntry("RANDOM SELECT UNPLAYED", "clear IS NULL", "random()"),
+		CustomSelectEntry("RANDOM SELECT FAILED", "clear = 1", "random()"),
+		CustomSelectEntry("RANDOM SELECT <HC", "clear < 4 OR clear IS NULL", "random()"),
+		CustomSelectEntry("RANDOM SELECT <AAA", "CAST((perfect * 2 + great) AS float) / (totalnotes * 2) * 100 < 88.88 OR perfect IS NULL", "random()")
+	};
+	mCustomSelectEntries.insert(mCustomSelectEntries.end(), defaults.begin(), defaults.end());
+}
+
 void Misc::CustomSelectLoadConfig() {
 	ConfigManager& config = *LR2HackBox::Get().mConfig.get();
+	if (!config.ValueExists("sCustomSelectEntries")) {
+		CustomSelectAddDefault();
+	}
 	std::vector<std::string> configEntries;
 	config.ReadArray("sCustomSelectEntries", configEntries);
 	for (auto& configEntry : configEntries) {
@@ -919,7 +926,6 @@ bool Misc::Deinit() {
 void Misc::LoadConfig() {
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 	mIsRetryTweaks = config.ReadValue("bRetryTweaks", mIsRetryTweaks);
-	mIsRandomSelect = config.ReadValue("bRandomSelect", mIsRandomSelect);
 	mIsCustomSelect = config.ReadValue("bCustomSelect", mIsCustomSelect);
 	mIsMainBPM = config.ReadValue("bMainBPM", mIsMainBPM);
 	mIsRerouteScreenshots = config.ReadValue("bRerouteScreenshots", mIsRerouteScreenshots);
@@ -1057,8 +1063,6 @@ void Misc::CustomSelectMenu() {
 			| ImGuiTableFlags(ImGuiTableFlags_SizingStretchSame);
 		float outer_size = ImGui::GetTextLineHeightWithSpacing() * 4;
 		if (ImGui::BeginTable("CustomSelectTable", 2, flags, ImVec2(0, outer_size))) {
-
-			ImGui::TableSetupScrollFreeze(0, 1);
 			ImGui::TableSetupColumn("Name");
 			ImGui::TableSetupColumn("Buttons");
 
@@ -1111,6 +1115,14 @@ void Misc::CustomSelectMenu() {
 				mSelectedCustomSelectEntry = mCustomSelectEntries.end();
 				CustomSelectSaveConfig();
 			}
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			if (ImGui::Button("Add Defaults")) {
+				CustomSelectAddDefault();
+				mSelectedCustomSelectEntry = mCustomSelectEntries.end();
+				mEditingCustomSelectEntry = CustomSelectEntry();
+				CustomSelectSaveConfig();
+			}
 			ImGui::EndTable();
 		}
 		ImGui::TreePop();
@@ -1130,18 +1142,11 @@ void Misc::Menu() {
 	ImGui::SameLine();
 	HelpMarker("When enabled:\n  Play: 'START' on fade-out to restart with a new random,\n  'SELECT' to restart with the same random. \n\n  Result: <any white key>+2 on fade-out\n  to restart with a new random.");
 
-
-	if (ImGui::Checkbox("Random Select", &mIsRandomSelect)) {
-		config.WriteValueAndSave("bRandomSelect", mIsRandomSelect);
-	}
-	ImGui::SameLine();
-	HelpMarker("Adds an assortment of 'RANDOM SELECT' entries to song folder, which starts a random song matching the filter from it.\n\nFilters are 'UNPLAYED', 'FAILED', '<HC', '<AAA'.");
-
 	if (ImGui::Checkbox("Custom Select", &mIsCustomSelect)) {
 		config.WriteValueAndSave("bCustomSelect", mIsCustomSelect);
 	}
 	ImGui::SameLine();
-	HelpMarker("Requires understanding of SQL querries. Allows creating customized entries to song folder, similar to Random Select feature, with 'song' and left-joined 'score' tables available.");
+	HelpMarker("Adds customizable entries to song folder, which can start a song from current folder matching the filter of the entry.\n\nFilters are SQL querries, where you can specify the condition and order.");
 
 	if (mIsCustomSelect) {
 		CustomSelectMenu();

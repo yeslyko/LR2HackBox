@@ -22,6 +22,9 @@ private:
 		std::string title;
 		std::string condition;
 		std::string order;
+		CustomSelectEntry() = default;
+		CustomSelectEntry(std::string title, std::string condition = "", std::string order = "") 
+			: title(title), condition(condition), order(order) {};
 	};
 	void LoadConfig();
 	void SetHooks();
@@ -48,6 +51,7 @@ private:
 
 	void CustomSelect();
 	void CustomSelectMenu();
+	void CustomSelectAddDefault();
 	void CustomSelectLoadConfig();
 	void CustomSelectSaveConfig();
 	bool mOnCustomSelEntry = false;
@@ -96,7 +100,6 @@ private:
 	std::vector<SafetyHookMid> mMidHooks;
 
 	bool mIsRetryTweaks = false;
-	bool mIsRandomSelect = false;
 	bool mIsCustomSelect = false;
 	bool mIsMainBPM = false;
 	bool mIsMetronome = false;
