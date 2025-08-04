@@ -44,7 +44,7 @@ template <>
 void ConfigManager::WriteArray<std::string>(std::string name, const std::vector<std::string>& array) {
 	std::stringstream values;
 	for (auto& value : array) {
-		values << value << ",";
+		values << value << "<NEXT>";
 	}
 	config[name] = values.str();
 }
@@ -53,7 +53,7 @@ template <>
 void ConfigManager::WriteArray<const char*>(std::string name, const std::vector<const char*>& array) {
 	std::stringstream values;
 	for (auto& value : array) {
-		values << value << ",";
+		values << value << "<NEXT>";
 	}
 	config[name] = values.str();
 }
@@ -63,7 +63,7 @@ void ConfigManager::WriteArray<bool>(std::string name, const std::vector<bool>& 
 	std::stringstream values;
 	for (const auto& value : array) {
 		std::string sValue = value ? "true" : "false";
-		values << sValue << ",";
+		values << sValue << "<NEXT>";
 	}
 	config[name] = values.str();
 }
@@ -72,7 +72,7 @@ template <>
 void ConfigManager::WriteArray<int>(std::string name, const std::vector<int>& array) {
 	std::stringstream values;
 	for (auto& value : array) {
-		values << value << ",";
+		values << value << "<NEXT>";
 	}
 	config[name] = values.str();
 }
@@ -81,7 +81,7 @@ template <>
 void ConfigManager::WriteArray<float>(std::string name, const std::vector<float>& array) {
 	std::stringstream values;
 	for (auto& value : array) {
-		values << value << ",";
+		values << value << "<NEXT>";
 	}
 	config[name] = values.str();
 }
@@ -140,45 +140,53 @@ T ConfigManager::ReadValue(std::string name, T def) {
 
 template <>
 void ConfigManager::ReadArray<std::string>(std::string name, std::vector<std::string>& array) {
-	std::stringstream values(config[name]);
+	std::string values(config[name]);
 	std::string value;
-	while (std::getline(values, value, ',')) {
+	for (size_t offsetFirst = 0, offsetLast = values.find("<NEXT>"); offsetLast <= values.size() - 6; offsetLast = values.find("<NEXT>", offsetFirst)) {
+		value = values.substr(offsetFirst, offsetLast - offsetFirst);
 		array.push_back(value);
+		offsetFirst = offsetLast + 6;
 	}
 }
 
 template <>
 void ConfigManager::ReadArray<bool>(std::string name, std::vector<bool>& array) {
-	std::stringstream values(config[name]);
+	std::string values(config[name]);
 	std::string value;
-	while (std::getline(values, value, ',')) {
+	for (size_t offsetFirst = 0, offsetLast = values.find("<NEXT>"); offsetLast <= values.size() - 6; offsetLast = values.find("<NEXT>", offsetFirst)) {
+		value = values.substr(offsetFirst, offsetLast - offsetFirst);
 		array.push_back(value == "true" ? true : false);
+		offsetFirst = offsetLast + 6;
 	}
 }
 
 template <>
 void ConfigManager::ReadArray<int>(std::string name, std::vector<int>& array) {
-	std::stringstream values(config[name]);
+	std::string values(config[name]);
 	std::string value;
-	while (std::getline(values, value, ',')) {
+	for (size_t offsetFirst = 0, offsetLast = values.find("<NEXT>"); offsetLast <= values.size() - 6; offsetLast = values.find("<NEXT>", offsetFirst)) {
+		value = values.substr(offsetFirst, offsetLast - offsetFirst);
 		int iValue{};
 		auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), iValue);
 		if (ec == std::errc()) {
 			array.push_back(iValue);
 		}
+		offsetFirst = offsetLast + 6;
 	}
 }
 
 template <>
 void ConfigManager::ReadArray<float>(std::string name, std::vector<float>& array) {
-	std::stringstream values(config[name]);
+	std::string values(config[name]);
 	std::string value;
-	while (std::getline(values, value, ',')) {
+	for (size_t offsetFirst = 0, offsetLast = values.find("<NEXT>"); offsetLast <= values.size() - 6; offsetLast = values.find("<NEXT>", offsetFirst)) {
+		value = values.substr(offsetFirst, offsetLast - offsetFirst);
 		float fValue{};
 		auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), fValue);
 		if (ec == std::errc()) {
 			array.push_back(fValue);
 		}
+		offsetFirst = offsetLast + 6;
 	}
 }
 
