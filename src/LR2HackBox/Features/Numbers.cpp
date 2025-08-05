@@ -235,7 +235,7 @@ void Numbers::ColumnStatsMenu() {
 	}
 	ImVec2 oldCursorPos = ImGui::GetCursorPos();
 	ImGui::SetCursorPos(ImVec2(-10000,-10000));
-	ImGui::Text("PGREAT:");
+	ImGui::TextUnformatted("PGREAT:");
 	const float rowHeight = ImGui::GetItemRectSize().y + paddingHeight;
 	ImGui::SetCursorPos(oldCursorPos);
 	const float scrollHeight = 14.f * scale;
@@ -253,7 +253,7 @@ void Numbers::ColumnStatsMenu() {
 		for (int rowIdx = 0; rowIdx < judgeRowCount; rowIdx++) {
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
-			ImGui::Text(notations[rowIdx]);
+			ImGui::TextUnformatted(notations[rowIdx]);
 			for (int columnIdx = 0; columnIdx < mKeycount; columnIdx++) {
 				ImGui::TableSetColumnIndex(columnIdx + 1);
 				JudgeCounter& column = mJudgeCountColumns[mGuiMapping[columnIdx]];

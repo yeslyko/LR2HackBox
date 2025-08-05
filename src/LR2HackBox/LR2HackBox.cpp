@@ -163,23 +163,23 @@ void LR2HackBoxMenu::Loop() {
 
 	if (LR2HackBox::Get().mIsCheckUpdate) {
 		if (!LR2HackBox::Get().mVerCheckFin) {
-			ImGui::Text("Checking version...");
+			ImGui::TextUnformatted("Checking version...");
 		}
 		else {
 			if (LR2HackBox::Get().mVerCheckSucc) {
 				if (!LR2HackBox::Get().mIsLastVer) {
-					ImGui::Text("New update available");
+					ImGui::TextUnformatted("New update available");
 					ImGui::SameLine();
 					ImGui::TextLinkOpenURL("here", "https://github.com/MatVeiQaaa/LR2HackBox/releases/tag/latest");
 				}
 			}
 			else {
-				ImGui::Text("Coulnd't check version!");
+				ImGui::TextUnformatted("Coulnd't check version!");
 			}
 		}
 	}
 
-	ImGui::Text("LR2HackBox Menu");
+	ImGui::TextUnformatted("LR2HackBox Menu");
 
 	std::chrono::hh_mm_ss timeSinceInit(std::chrono::system_clock::now() - LR2HackBox::Get().mInitTime);
 
@@ -254,7 +254,7 @@ void LR2HackBoxMenu::BindingsMenu() {
 	ImGui::SetWindowFocus();
 	for (auto& binding : mMenuBindings) {
 		ImGui::PushID(binding.first.c_str());
-		ImGui::Text(binding.first.c_str());
+		ImGui::TextUnformatted(binding.first.c_str());
 		ImGui::SameLine();
 		std::string keycodeName = "NONE";
 		if (binding.second.vKey) {

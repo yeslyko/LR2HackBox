@@ -205,10 +205,10 @@ void Unrandomizer::RandomHistoryDisplay() {
 				for (int col = 0; col < 2; col++) {
 					ImGui::TableSetColumnIndex(col);
 					if (col % 2 == 0) {
-						ImGui::Text(entry.GetTitle().c_str());
+						ImGui::TextUnformatted(entry.GetTitle().c_str());
 					}
 					else {
-						ImGui::Text(entry.GetRandom().c_str());
+						ImGui::TextUnformatted(entry.GetRandom().c_str());
 					}
 					if (ImGui::IsItemHovered()) {
 						ImGui::TableSetBgColor(ImGuiTableBgTarget(ImGuiTableBgTarget_CellBg), IM_COL32(110, 90, 20, 255));
@@ -227,10 +227,10 @@ void Unrandomizer::RandomHistoryDisplay() {
 
 
 void Unrandomizer::DragAndDropKeyDisplay(UnrandomizerState state) {
-	ImGui::Text("Random Select");
+	ImGui::TextUnformatted("Random Select");
 	ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol(ImGuiCol_Text), IM_COL32(196, 196, 196, 255));
-	ImGui::Text("(drag and drop to reorder lanes)");
+	ImGui::TextUnformatted("(drag and drop to reorder lanes)");
 	ImGui::PopStyleColor();
 	if (ImGui::Button("Mirror")) {
 		MirrorOrder();
@@ -318,7 +318,7 @@ void Unrandomizer::MirrorOrder() {
 void Unrandomizer::Menu() {
 	LR2::game* game = LR2HackBox::Get().GetGame();
 	if (game->sSelect.metaSelected.keymode != 0 && game->sSelect.metaSelected.keymode != 7 && game->sSelect.metaSelected.keymode != 5) {
-		ImGui::Text("Only 7K and 5K mode is currently implemented.");
+		ImGui::TextUnformatted("Only 7K and 5K mode is currently implemented.");
 		mIsEnabled = false;
 		return;
 	}
@@ -340,11 +340,11 @@ void Unrandomizer::Menu() {
 
 	RandomHistoryDisplay();
 
-	ImGui::Text("Controls");
+	ImGui::TextUnformatted("Controls");
 
 	ImGui::Indent();
 	if (GetSeed(mLaneOrderNumL, mGuiKeymode) == 0xFFFF) {
-		ImGui::Text("This arrange is missing from the seed map...");
+		ImGui::TextUnformatted("This arrange is missing from the seed map...");
 		mIsEnabled = false;
 	}
 	else if (ImGui::Checkbox("Trainer Enabled", &mIsEnabled)) {

@@ -58,64 +58,64 @@ void GameOptions::Menu() {
 	ImGui::InputInt("##hsmin", &game.config.play.hsmin, 0);
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(COLUMN1_X - MIN_WIDTH - LEGEND_SPACING);
-	ImGui::Text("MIN");
+	ImGui::TextUnformatted("MIN");
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(COLUMN2_X - MAX_WIDTH - LEGEND_SPACING);
-	ImGui::Text("MAX");
+	ImGui::TextUnformatted("MAX");
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(COLUMN2_X);
 	ImGui::InputInt("##hsmax", &game.config.play.hsmax, 0);
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(COLUMN3_X - MARGIN_WIDTH - LEGEND_SPACING);
-	ImGui::Text("MARGIN");
+	ImGui::TextUnformatted("MARGIN");
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(COLUMN3_X);
 	ImGui::InputInt("##hsmargin", &game.config.play.hsmargin, 0);
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(START_X);
-	ImGui::Text("HI SPEED");
+	ImGui::TextUnformatted("HI SPEED");
 
 	ImGui::SetCursorPosX(COLUMN1_X);
 	ImGui::InputInt("##basespeed", &game.config.play.basespeed, 0);
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(COLUMN2_X - MAX_WIDTH - LEGEND_SPACING);
-	ImGui::Text("Lane cover");
+	ImGui::TextUnformatted("Lane cover");
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(COLUMN3_X - MARGIN_WIDTH - LEGEND_SPACING);
-	ImGui::Text("MARGIN");
+	ImGui::TextUnformatted("MARGIN");
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(COLUMN3_X);
 	ImGui::InputInt("##shuttermargin", &game.config.play.shuttermargin, 0);
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(START_X);
-	ImGui::Text("Base speed");
+	ImGui::TextUnformatted("Base speed");
 
 	ImGui::SetCursorPosX(COLUMN1_X);
 	ImGui::InputInt("ms##poorbga", &game.config.play.poorbga, 0);
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(START_X);
-	ImGui::Text("Miss BGA");
+	ImGui::TextUnformatted("Miss BGA");
 	
 	ImGui::SetCursorPosX(COLUMN2_X);
 	ImGui::InputInt("ms##inputinterval", &game.config.input.sys_inputinterval, 0);
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(START_X);
-	ImGui::Text("Minimum input interval");
+	ImGui::TextUnformatted("Minimum input interval");
 
 	ImGui::SetCursorPosX(COLUMN2_X);
 	ImGui::InputInt("ms##speedfirst", &game.config.select.speedfirst, 0);
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(COLUMN2_X - FIRST_WIDTH - LEGEND_SPACING);
-	ImGui::Text("First");
+	ImGui::TextUnformatted("First");
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(COLUMN3_X - NEXT_WIDTH - LEGEND_SPACING);
-	ImGui::Text("Next");
+	ImGui::TextUnformatted("Next");
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(COLUMN3_X);
 	ImGui::InputInt("ms##speednext", &game.config.select.speednext, 0);
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(START_X);
-	ImGui::Text("Music list");
+	ImGui::TextUnformatted("Music list");
 
 	ImGui::SetCursorPosX(COLUMN1_X);
 	if (ImGui::InputFloat("s##irwaittime", &mIRWaitTime, 0, 0, "%.1f")) {
@@ -125,7 +125,7 @@ void GameOptions::Menu() {
 	}
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(START_X);
-	ImGui::Text("IR wait time");
+	ImGui::TextUnformatted("IR wait time");
 
 	ImGui::PopItemWidth();
 	

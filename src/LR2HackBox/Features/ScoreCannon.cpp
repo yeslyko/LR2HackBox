@@ -335,7 +335,7 @@ void ScoreCannon::Menu() {
 		for (auto& url : mUrls) {
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
-			ImGui::Text(url.c_str());
+			ImGui::TextUnformatted(url.c_str());
 			if (ImGui::IsItemHovered()) {
 				ImGui::TableSetBgColor(ImGuiTableBgTarget(ImGuiTableBgTarget_CellBg), IM_COL32(110, 90, 20, 255));
 				if (ImGui::IsMouseDoubleClicked(0)) {

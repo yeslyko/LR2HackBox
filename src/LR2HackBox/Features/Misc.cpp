@@ -1019,13 +1019,13 @@ void Misc::CustomSelectMenu() {
 		memcpy(condition, mEditingCustomSelectEntry.condition.data(), std::min(mEditingCustomSelectEntry.condition.size(), sizeof(condition)));
 		memcpy(order, mEditingCustomSelectEntry.order.data(), std::min(mEditingCustomSelectEntry.order.size(), sizeof(order)));
 		
-		ImGui::Text("Title:");
+		ImGui::TextUnformatted("Title:");
 		ImGui::SameLine();
 		if (ImGui::InputText("##title", title, sizeof(title))) {
 			mEditingCustomSelectEntry.title = title;
 		}
 
-		ImGui::Text("SELECT hash WHERE");
+		ImGui::TextUnformatted("SELECT hash WHERE");
 		ImGui::SameLine();
 		HelpMarker("Can be empty, then only order will be used.");
 		ImGui::SameLine();
@@ -1033,7 +1033,7 @@ void Misc::CustomSelectMenu() {
 			mEditingCustomSelectEntry.condition = condition;
 		}
 
-		ImGui::Text("ORDER BY");
+		ImGui::TextUnformatted("ORDER BY");
 		ImGui::SameLine();
 		HelpMarker("Can be empty. Defaults to 'random()'.");
 		ImGui::SameLine();
@@ -1071,7 +1071,7 @@ void Misc::CustomSelectMenu() {
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
 				std::string sRowIdx = std::to_string(ImGui::TableGetRowIndex());
-				ImGui::Text(it->title.c_str());
+				ImGui::TextUnformatted(it->title.c_str());
 				if (ImGui::IsItemHovered()) {
 					ImGui::TableSetBgColor(ImGuiTableBgTarget(ImGuiTableBgTarget_CellBg), IM_COL32(110, 90, 20, 255));
 					if (ImGui::IsMouseDoubleClicked(0)) {
