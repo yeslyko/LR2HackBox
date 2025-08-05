@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <string>
+#include <thread>
 
 #include "Features/Unrandomizer.hpp"
 #include "Features/Funny.hpp"
