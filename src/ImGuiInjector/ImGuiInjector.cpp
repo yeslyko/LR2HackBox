@@ -212,8 +212,7 @@ WNDPROC ImGuiInjector::GetPreviousWndProc() {
 }
 
 bool ImGuiInjector::WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    for (auto it = mMenus.begin(); it != mMenus.end(); it++) {
-        ImGuiMenu* menu = *(it._Ptr);
+    for (auto& menu : mMenus) {
         menu->MessageHandler(hWnd, msg, wParam, lParam);
     }
     if (IsMenuRunning()) ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
@@ -229,8 +228,7 @@ void ImGuiInjector::AddMenu(ImGuiMenu* pMenu) {
 
 void ImGuiInjector::RunMenus() {
     bool drawImGuiCursor = false;
-    for (auto it = mMenus.begin(); it != mMenus.end(); it++) {
-        ImGuiMenu* menu = *(it._Ptr);
+    for (auto& menu : mMenus) {
         if (menu->IsOpen()) {
             drawImGuiCursor = true;
             menu->Loop();
@@ -242,8 +240,7 @@ void ImGuiInjector::RunMenus() {
 
 bool ImGuiInjector::IsMenuRunning() {
     bool isMenuRunning = false;
-    for (auto it = mMenus.begin(); it != mMenus.end(); it++) {
-        ImGuiMenu* menu = *(it._Ptr);
+    for (auto& menu : mMenus) {
         isMenuRunning |= menu->IsOpen();
     }
     return isMenuRunning;
