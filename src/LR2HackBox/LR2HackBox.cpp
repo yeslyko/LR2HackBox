@@ -184,7 +184,7 @@ void LR2HackBoxMenu::Loop() {
 	std::chrono::hh_mm_ss timeSinceInit(std::chrono::system_clock::now() - LR2HackBox::Get().mInitTime);
 
 	ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::CalcTextSize("Time running: 00:00:00").x - 15.f);
-	ImGui::Text("Time running: %02d:%02d:%02d", timeSinceInit.hours(), timeSinceInit.minutes(), timeSinceInit.seconds());
+	ImGui::Text("Time running: %02d:%02d:%02d", timeSinceInit.hours().count(), timeSinceInit.minutes().count(), timeSinceInit.seconds().count());
 
 	IFSHOWIMGUIDEMO(ImGui::Checkbox("Show Demo", &mIsDemoMenu));
 
