@@ -3,6 +3,8 @@
 #include "Misc.hpp"
 
 #include <iostream>
+#include <print>
+#include <ranges>
 #include <unordered_map>
 #include <algorithm>
 #include <filesystem>
@@ -897,6 +899,31 @@ void Misc::CustomSelectSaveConfig() {
 	config.WriteArrayAndSave("sCustomSelectEntries", configEntries);
 }
 
+void Misc::OnIrSendSuccess(SafetyHookContext& regs) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+	if (!misc.mIsResultQuickIR) return;
+	int* resetFlag = (int*)regs.esp;
+	*resetFlag = 0;
+	LR2::NETWORK& ir = LR2HackBox::Get().GetGame()->net;
+	std::vector<std::string_view> values;
+	for (const auto value : std::ranges::split_view(std::string_view(ir.httpResult.body), ',')) {
+		values.emplace_back(value.begin(), value.end());
+	}
+	if (values.size() < 2) return;
+	{
+		int rank{};
+		std::string_view sRank = values[0];
+		auto [ptr, ec] = std::from_chars(sRank.data(), sRank.data() + sRank.size(), rank);
+		if (ec == std::errc()) ir.rankingData.myRanking = rank;
+	}
+	{
+		int rankCount{};
+		std::string_view sRankCount = values[1];
+		auto [ptr, ec] = std::from_chars(sRankCount.data(), sRankCount.data() + sRankCount.size(), rankCount);
+		if (ec == std::errc()) ir.rankingData.rankingCount = rankCount;
+	}
+}
+
 bool Misc::EarlyInit(uintptr_t moduleBase) {
 	Misc::mModuleBase = moduleBase;
 
@@ -938,6 +965,7 @@ void Misc::LoadConfig() {
 	mIsCourseResultFix = config.ReadValue("bCourseResultFix", mIsCourseResultFix);
 	mIsSkipResultWaitIR = config.ReadValue("bSkipResultWaitIR", mIsSkipResultWaitIR);
 	mIsSkipResultSub = config.ReadValue("bSkipResultSub", mIsSkipResultSub);
+	mIsResultQuickIR = config.ReadValue("bResultQuickIR", mIsResultQuickIR);
 	mAutoadjustClampMin = config.ReadValue("iAutoadjustClampMin", mAutoadjustClampMin);
 	mAutoadjustClampMax = config.ReadValue("iAutoadjustClampMax", mAutoadjustClampMax);
 
@@ -974,6 +1002,8 @@ void Misc::SetHooks() {
 
 	oSetFirstSkins = safetyhook::create_inline(mModuleBase + 0x9D80, OnSetFirstSkins);
 	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x03E4F8, OnWriteConfigXml));
+
+	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x0BC8FF, OnIrSendSuccess));
 
 	if (MH_CreateHookEx((LPVOID)SaveDrawScreenToPNG, &OnSaveDrawScreenToPNG, &SaveDrawScreenToPNG) != MH_OK)
 	{
@@ -1223,6 +1253,12 @@ void Misc::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("Skips the sub-menu of result scene, normally invoked upon the first input. Will still block for IR, unless disabled separately");
+
+	if (ImGui::Checkbox("Quick IR on Result", &mIsResultQuickIR)) {
+		config.WriteValueAndSave("bResultQuickIR", mIsResultQuickIR);
+	}
+	ImGui::SameLine();
+	HelpMarker("Loads IR position for result screen as soon as the score sends, rather than waiting for all leaderboard scores to load.\nBest paired with \"Skip Result Wait for IR\".");
 
 	if (ImGui::Checkbox("Analog scratch support", &mIsAnalogInput)) {
 		config.WriteValueAndSave("bAnalogInput", mIsAnalogInput);

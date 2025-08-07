@@ -97,6 +97,8 @@ private:
 	void SetSkipResultWaitIR(bool value);
 	void SetSkipResultSub(bool value);
 
+	static void OnIrSendSuccess(SafetyHookContext& regs);
+
 	std::vector<SafetyHookMid> mMidHooks;
 
 	bool mIsRetryTweaks = false;
@@ -113,4 +115,5 @@ private:
 	bool mIsCourseResultFix = false;
 	bool mIsSkipResultWaitIR = false;
 	bool mIsSkipResultSub = false;
+	bool mIsResultQuickIR = false;
 };
