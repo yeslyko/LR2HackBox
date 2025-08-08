@@ -828,7 +828,8 @@ int Misc::OnSetFirstSkins(void* g) {
 	void* hXml = malloc(0x48);
 	typedef void*(__thiscall* tTiXmlDocumentCtor)(void* pThis, const char* filename);
 	tTiXmlDocumentCtor TiXmlDocumentCtor = (tTiXmlDocumentCtor)0x4C2FE0;
-	void* result1 = TiXmlDocumentCtor(hXml, "LR2files\\Config\\config.xml");
+	const char* configName = (const char*)0x7381A8;
+	void* result1 = TiXmlDocumentCtor(hXml, configName);
 	typedef bool(__thiscall* tTiXmlDocumentLoadFile)(void* pThis, int encoding);
 	tTiXmlDocumentLoadFile TiXmlDocumentLoadFile = (tTiXmlDocumentLoadFile)0x4C4150;
 	bool result2 = TiXmlDocumentLoadFile(hXml, 0);
