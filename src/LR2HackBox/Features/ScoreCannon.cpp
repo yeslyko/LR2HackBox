@@ -147,7 +147,8 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 	data = {
 		{"username", mDiscordName},
 		{"avatar_url", mDiscordAvatarUrl},
-		{"embeds", {{
+		{"embeds", {
+			{
 			{"title", std::format("{} {} {} {}", score.folder, score.title, score.subtitle, lamps[score.lamp])},
 			{"description", GetLampText(score)},
 			{"color", GetLampRGB(score)},
@@ -170,27 +171,42 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 			{"author", {
 				{"name", std::format("{} just got a new score!", mGameName)}
 			}},
+				{"image", {
+					{"url", "attachment://screenshot.png"}
+				}},
 			{"footer", {
 				{"text", "LR2HackBox Scorecard"}
 			}}
-		}}}
+			}
+		}},
+		{"attachments", {
+			{
+				{"id", 0},
+				{"description", "screenshot"},
+				{"filename", "screenshot.png"}
+			}
+		}}
 	};
 	return data.dump();
 }
 
-bool ScoreCannon::PostScore(const Score& score) {
+bool ScoreCannon::PostScore(const Score& score, const std::string& screenshotPath) {
 	std::string data = GetJsonString(score);
 	std::println("{}", data);
 	for (auto& url : mUrls) {
-		std::thread([url, data]() {
-			cpr::Response r = cpr::Post(cpr::Url{ url },
-										cpr::Header{ {"Content-Type", "application/json"} },
+		std::thread([url, data, screenshotPath]() {
+			cpr::Response r = cpr::Post(
+				cpr::Url{ url },
 										cpr::Header{ {"User-Agent", "DiscordBot (https://discord.com, 1.0)"} },
-										cpr::Body{ data });
+				cpr::Multipart{
+					{"payload_json", data},
+					{"files[0]", cpr::File(screenshotPath, "screenshot.png")}
+				}
+			);
 			if (r.error.code != cpr::ErrorCode::OK) {
 				std::println("[LR2HackBox] Coulnd't POST to {}: {}", url, r.error.message);
 			}
-			else if (r.status_code != 204) {
+			else if (r.status_code != 200) {
 				std::println("[LR2HackBox] Message rejected by {}: {}", url, r.status_line);
 			}
 		}).detach();

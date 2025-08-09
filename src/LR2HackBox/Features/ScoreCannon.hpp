@@ -51,7 +51,7 @@ public:
 	bool Deinit();
 	void Menu();
 
-	bool PostScore(const Score& score);
+	bool PostScore(const Score& score, const std::string& screenshotPath);
 
 	bool mIsEnabled = false;
 	bool mAlreadySent = false;

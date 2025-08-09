@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <filesystem>
+#include <fstream>
 #include <Gdiplus.h>
 #include "LR2HackBox/LR2HackBox.hpp"
 #include "AnalogInput.hpp"
@@ -516,18 +517,20 @@ tSaveDrawScreenToPNG SaveDrawScreenToPNG = (tSaveDrawScreenToPNG)0x510060;
 int Misc::OnSaveDrawScreenToPNG(int x1, int y1, int x2, int y2, const char* FileName, int CompressionLevel) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	LR2::game& game = *LR2HackBox::Get().GetGame();
-	if (game.procSelecter == 5 || game.procSelecter == 13) {
-		ScoreCannon& spammer = *(ScoreCannon*)LR2HackBox::Get().mScoreCannon.get();
-		if (spammer.mIsEnabled && !spammer.mAlreadySent) {
-			ScoreCannon::Score score(&game);
-			spammer.PostScore(score);
-		}
-	}
+
 	std::string directory = "screenshots\\";
 	std::string path = misc.mIsRerouteScreenshots ? directory + FileName : FileName;
 	if (misc.mIsRerouteScreenshots && !std::filesystem::directory_entry(directory).exists())
 		std::filesystem::create_directories(directory);
 	int result = SaveDrawScreenToPNG(x1, y1, x2, y2, path.c_str(), CompressionLevel);
+
+	if (game.procSelecter == 5 || game.procSelecter == 13) {
+		ScoreCannon& spammer = *(ScoreCannon*)LR2HackBox::Get().mScoreCannon.get();
+		if (spammer.mIsEnabled && !spammer.mAlreadySent) {
+			ScoreCannon::Score score(&game);
+			spammer.PostScore(score, path);
+		}
+	}
 
 	if (misc.mIsScreenshotsCopybuffer) {
 		ULONG_PTR gdiplusToken = NULL;
