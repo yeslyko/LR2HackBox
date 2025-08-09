@@ -29,10 +29,19 @@ public:
 			IR_AVERAGE,
 			TARGETERROR
 		};
+		enum Random {
+			NONRAN,
+			MIRROR,
+			RANDOM,
+			SRANDOM,
+			HRANDOM,
+			ALLSCR
+		};
 		Score() = default;
 		Score(std::string folder, std::string title, std::string subtitle, Lamp lamp, Lamp lampBest, 
-			  Target target, int exScore, int exScoreMax, int exScoreBest, int exScoreTarget,
-			  int missCount, int missCountBest);
+			  Target target, Random arrange, std::string random, int rseed,
+			  int exScore, int exScoreMax, int exScoreBest, int exScoreTarget,
+			  int maxCombo, int maxComboBest, int missCount, int missCountBest);
 		Score(void* game);
 		std::string folder;
 		std::string title;
@@ -40,10 +49,15 @@ public:
 		Score::Lamp lamp = NONE;
 		Score::Lamp lampBest = NONE;
 		Score::Target target = NOTARGET;
+		Score::Random random = NONRAN;
+		std::string arrange = "1234567";
+		int rseed = 0;
 		int exScore = 0;
 		int exScoreMax = 0;
 		int exScoreBest = 0;
 		int exScoreTarget = 0;
+		int maxCombo = 0;
+		int maxComboBest = 0;
 		int missCount = 0;
 		int missCountBest = 0;
 	};

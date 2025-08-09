@@ -172,6 +172,11 @@ void Unrandomizer::ToggleBWPermute() {
 	mIsBWPermute = !mIsBWPermute;
 }
 
+std::string Unrandomizer::GetLastRandom() {
+	if (mRandomHistory.empty()) return "1234567";
+	return mRandomHistory.front().GetRandom();
+}
+
 static void HelpMarker(const char* desc) {
 	ImGui::TextDisabled("(?)");
 	if (ImGui::IsItemHovered()) {

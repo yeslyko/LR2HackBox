@@ -5,6 +5,7 @@
 #include <codecvt>
 
 #include "LR2HackBox/LR2HackBox.hpp"
+#include "Unrandomizer.hpp"
 
 #include <safetyhook.hpp>
 #include <json/single_include/nlohmann/json.hpp>
@@ -14,8 +15,9 @@
 #define RGB(R, G, B) R << 16 | G << 8 | B
 
 constexpr const char* lamps[] = { "NO PLAY", "FAILED", "EASY CLEAR", "GROOVE CLEAR", "HARD CLEAR", "FULL COMBO", "PERFECT", "MAX", "ASSIST CLEAR", "NONE" };
-constexpr const char* grades[] = { "F", "E", "D", "C", "B", "A", "AA", "AAA", "MAX-", "MAX" };
+constexpr const char* grades[] = { "F", "E", "D", "C", "B", "A", "AA", "AAA", "MAX" };
 constexpr const char* targets[] = { "NO TARGET", "MY BEST", "RANK AAA", "RANK AA", "RANK A", "TARGET%", "IR TOP", "IR NEXT", "IR AVERAGE", "ERROR" };
+constexpr const char* randoms[] = { "NONRAN", "MIRROR", "RANDOM", "S-RANDOM", "H-RANDOM", "ALL-SCR" };
 
 enum Grade {
 	F,
@@ -26,7 +28,6 @@ enum Grade {
 	A,
 	AA,
 	AAA,
-	MAXMINUS,
 	MAX
 };
 
@@ -107,14 +108,52 @@ static const float GetExPercentage(const int& exScore, const int& exScoreMax) {
 	return static_cast<float>(exScore) / exScoreMax * 100.f;
 }
 
+static const std::string GetExGradeDelta(const int& exScore, const int& exScoreMax) {
+	float score = static_cast<float>(exScore);
+	float scoreMax = static_cast<float>(exScoreMax);
+	Grade gradeNotation(F);
+	int gradeScore = 0;
+	if (score / scoreMax > 8.5f / 9.f) {
+		gradeNotation = MAX;
+		gradeScore = scoreMax;
+	}
+	else if (score / scoreMax > 7.5f / 9.f) {
+		gradeNotation = AAA;
+		gradeScore = static_cast<int>(scoreMax * 8.f / 9.f);
+	}
+	else if (score / scoreMax > 6.5f / 9.f) {
+		gradeNotation = AA;
+		gradeScore = static_cast<int>(scoreMax * 7.f / 9.f);
+	}
+	else if (score / scoreMax > 5.5f / 9.f) {
+		gradeNotation = A;
+		gradeScore = static_cast<int>(scoreMax * 6.f / 9.f);
+	}
+	else if (score / scoreMax > 4.5f / 9.f) {
+		gradeNotation = B;
+		gradeScore = static_cast<int>(scoreMax * 5.f / 9.f);
+	}
+	else if (score / scoreMax > 3.5f / 9.f) {
+		gradeNotation = C;
+		gradeScore = static_cast<int>(scoreMax * 4.f / 9.f);
+	}
+	else if (score / scoreMax > 2.5f / 9.f) {
+		gradeNotation = D;
+		gradeScore = static_cast<int>(scoreMax * 3.f / 9.f);
+	}
+	else {
+		gradeNotation = E;
+		gradeScore = static_cast<int>(scoreMax * 2.f / 9.f);
+	}
+
+	return std::format("{}{}", grades[gradeNotation], GetDelta(score, gradeScore));
+}
+
 static const Grade GetExGrade(const int& exScore, const int& exScoreMax) {
 	float score = static_cast<float>(exScore);
 	float scoreMax = static_cast<float>(exScoreMax);
 	if (exScore == exScoreMax) {
 		return MAX;
-	}
-	else if (score / scoreMax >= 8.5f / 9.f) {
-		return MAXMINUS;
 	}
 	else if (score / scoreMax >= 8.f / 9.f) {
 		return AAA;
@@ -149,34 +188,45 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 		{"avatar_url", mDiscordAvatarUrl},
 		{"embeds", {
 			{
-			{"title", std::format("{} {} {} {}", score.folder, score.title, score.subtitle, lamps[score.lamp])},
-			{"description", GetLampText(score)},
-			{"color", GetLampRGB(score)},
-			{"fields", {
-				{
-					{"name", std::format("Rank: {} ({:.2f}%) {}", grades[GetExGrade(score.exScore, score.exScoreMax)], GetExPercentage(score.exScore, score.exScoreMax), GetDeltaNotation(GetExGrade(score.exScore, score.exScoreMax), GetExGrade(score.exScoreBest, score.exScoreMax)))},
-					{"value", score.target == Score::Target::PERCENT ? std::format("Target: {:.0f}%, ({})", GetExPercentage(score.exScoreTarget, score.exScoreMax), GetDelta(score.exScore, score.exScoreTarget))
-																	 : std::format("Target: {} ({})", targets[score.target], GetDelta(score.exScore, score.exScoreTarget))
+				{"title", std::format("{} {} {} {}", score.folder, score.title, score.subtitle, lamps[score.lamp])},
+				{"description", GetLampText(score)},
+				{"color", GetLampRGB(score)},
+				{"fields", {
+					{
+						{"name", std::format("Arrange: {}", randoms[score.random])},
+						{"value", score.random == Score::Random::NONRAN || score.random == Score::Random::MIRROR || score.random == Score::Random::RANDOM
+																		  ? std::format("Order: {} ({})", score.arrange, score.rseed)
+																		  : std::format("Seed: {}", score.rseed)
+						}
+					},
+					{
+						{"name", std::format("Rank: {} ({:.2f}%) {}", GetExGradeDelta(score.exScore, score.exScoreMax), GetExPercentage(score.exScore, score.exScoreMax), GetDeltaNotation(GetExGrade(score.exScore, score.exScoreMax), GetExGrade(score.exScoreBest, score.exScoreMax)))},
+						{"value", score.target == Score::Target::PERCENT ? std::format("Target: {:.0f}%, ({})", GetExPercentage(score.exScoreTarget, score.exScoreMax), GetDelta(score.exScore, score.exScoreTarget))
+																		 : std::format("Target: {} ({})", targets[score.target], GetDelta(score.exScore, score.exScoreTarget))
+						}
+					},
+					{
+						{"name", std::format("EX Score: {} {}", score.exScore, GetDeltaNotation(score.exScore, score.exScoreBest))},
+						{"value", std::format("({})", GetDelta(score.exScore, score.exScoreBest))}
+					},
+					{
+						{"name", std::format("Max Combo: {} {}", score.maxCombo, GetDeltaNotation(score.maxCombo, score.maxComboBest))},
+						{"value", std::format("({})", GetDelta(score.maxCombo, score.maxComboBest))}
+					},
+					{
+						{"name", std::format("Miss count: {} {}", score.missCount, GetDeltaNotation(score.missCount, score.missCountBest))},
+						{"value", std::format("({})", GetDelta(score.missCount, score.missCountBest))}
 					}
-				},
-				{
-					{"name", std::format("EX Score: {} {}", score.exScore, GetDeltaNotation(score.exScore, score.exScoreBest))},
-					{"value", std::format("({})", GetDelta(score.exScore, score.exScoreBest))}
-				},
-				{
-					{"name", std::format("Miss count: {} {}", score.missCount, GetDeltaNotation(score.missCount, score.missCountBest))},
-					{"value", std::format("({})", GetDelta(score.missCount, score.missCountBest))}
-				}
-			}},
-			{"author", {
-				{"name", std::format("{} just got a new score!", mGameName)}
-			}},
+				}},
+				{"author", {
+					{"name", std::format("{} just got a new score!", mGameName)}
+				}},
 				{"image", {
 					{"url", "attachment://screenshot.png"}
 				}},
-			{"footer", {
-				{"text", "LR2HackBox Scorecard"}
-			}}
+				{"footer", {
+					{"text", "LR2HackBox Scorecard"}
+				}}
 			}
 		}},
 		{"attachments", {
@@ -197,7 +247,7 @@ bool ScoreCannon::PostScore(const Score& score, const std::string& screenshotPat
 		std::thread([url, data, screenshotPath]() {
 			cpr::Response r = cpr::Post(
 				cpr::Url{ url },
-										cpr::Header{ {"User-Agent", "DiscordBot (https://discord.com, 1.0)"} },
+				cpr::Header{ {"User-Agent", "DiscordBot (https://discord.com, 1.0)"} },
 				cpr::Multipart{
 					{"payload_json", data},
 					{"files[0]", cpr::File(screenshotPath, "screenshot.png")}
@@ -216,11 +266,13 @@ bool ScoreCannon::PostScore(const Score& score, const std::string& screenshotPat
 }
 
 ScoreCannon::Score::Score(std::string folder, std::string title, std::string subtitle, Lamp lamp, Lamp lampBest,
-	Target target, int exScore, int exScoreMax, int exScoreBest, int exScoreTarget,
-	int missCount, int missCountBest) :
+	Target target, Random random, std::string arrange, int rseed,
+	int exScore, int exScoreMax, int exScoreBest, int exScoreTarget,
+	int maxCombo, int maxComboBest, int missCount, int missCountBest) :
 	folder(folder), title(title), subtitle(subtitle), lamp(lamp), lampBest(lampBest),
-	target(target), exScore(exScore), exScoreMax(exScoreMax), exScoreBest(exScoreBest), exScoreTarget(exScoreTarget),
-	missCount(missCount), missCountBest(missCountBest) {
+	target(target), random(random), arrange(arrange), rseed(rseed),
+	exScore(exScore), exScoreMax(exScoreMax), exScoreBest(exScoreBest), exScoreTarget(exScoreTarget),
+	maxCombo(maxCombo), maxComboBest(maxComboBest), missCount(missCount), missCountBest(missCountBest) {
 
 }
 
@@ -243,12 +295,17 @@ ScoreCannon::Score::Score(void* g) {
 		subtitle = s2utf(game.sSelect.metaSelected.subtitle.body);
 	}
 	lamp = Lamp(game.gameplay.player[0].clearType);
-	lampBest = game.sSelect.old.playcount <= 0 || game.sSelect.old.stat_exscore <= 0 ? Lamp::NONE : Lamp(game.sSelect.old.clear);
+	lampBest = game.sSelect.old.playcount <= 0 && game.sSelect.old.stat_exscore <= 0 ? Lamp::NONE : Lamp(game.sSelect.old.clear);
 	target = Target(game.config.play.p1_target);
+	random = Random(game.config.play.random[0]);
+	arrange = random != RANDOM ? random != MIRROR ?  "1234567" : "7654321" : ((Unrandomizer*)LR2HackBox::Get().mUnrandomizer.get())->GetLastRandom();
+	rseed = game.gameplay.randomseed;
 	exScore = game.gameplay.player[0].judgecount[5] * 2 + game.gameplay.player[0].judgecount[4];
 	exScoreMax = game.gameplay.player[0].totalnotes * 2;
 	exScoreBest = game.sSelect.old.stat_exscore;
 	exScoreTarget = game.gameplay.targetScore.exscore;
+	maxCombo = game.procSelecter == 13 ? game.gameplay.player[0].max_combo_course : game.gameplay.player[0].max_combo;
+	maxComboBest = game.sSelect.old.stat_maxcombo;
 	missCount = game.gameplay.player[0].judgecount[1] + game.gameplay.player[0].judgecount[2] + game.gameplay.player[0].totalnotes - game.gameplay.player[0].note_current;
 	missCountBest = game.sSelect.old.playcount <= 0 ? 0 : game.sSelect.old.minbp;
 }

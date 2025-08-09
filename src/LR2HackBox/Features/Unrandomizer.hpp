@@ -31,6 +31,8 @@ public:
 		std::string GetRandom();
 	};
 
+	std::string GetLastRandom();
+
 private:
 	std::vector<SafetyHookMid> mMidHooks;
 
