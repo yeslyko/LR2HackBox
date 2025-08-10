@@ -214,8 +214,12 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 						{"value", std::format("({})", GetDelta(score.maxCombo, score.maxComboBest))}
 					},
 					{
-						{"name", std::format("Miss count: {} {}", score.missCount, GetDeltaNotation(score.missCount, score.missCountBest))},
+						{"name", std::format("Miss Count: {} {}", score.missCount, GetDeltaNotation(score.missCount, score.missCountBest))},
 						{"value", std::format("({})", GetDelta(score.missCount, score.missCountBest))}
+					},
+					{
+						{"name", std::format("IR Position: {}/{} {}", score.irPosition, score.irCount, GetDeltaNotation(score.irPositionBest, score.irPosition))},
+						{"value", std::format("({})", GetDelta(score.irPosition, score.irPositionBest))}
 					}
 				}},
 				{"author", {
@@ -268,11 +272,13 @@ bool ScoreCannon::PostScore(const Score& score, const std::string& screenshotPat
 ScoreCannon::Score::Score(std::string folder, std::string title, std::string subtitle, Lamp lamp, Lamp lampBest,
 	Target target, Random random, std::string arrange, int rseed,
 	int exScore, int exScoreMax, int exScoreBest, int exScoreTarget,
-	int maxCombo, int maxComboBest, int missCount, int missCountBest) :
+	int maxCombo, int maxComboBest, int missCount, int missCountBest, 
+	int irPosition, int irPositionBest, int irCount) :
 	folder(folder), title(title), subtitle(subtitle), lamp(lamp), lampBest(lampBest),
 	target(target), random(random), arrange(arrange), rseed(rseed),
 	exScore(exScore), exScoreMax(exScoreMax), exScoreBest(exScoreBest), exScoreTarget(exScoreTarget),
-	maxCombo(maxCombo), maxComboBest(maxComboBest), missCount(missCount), missCountBest(missCountBest) {
+	maxCombo(maxCombo), maxComboBest(maxComboBest), missCount(missCount), missCountBest(missCountBest), 
+	irPosition(irPosition), irPositionBest(irPositionBest), irCount(irCount) {
 
 }
 
@@ -308,6 +314,9 @@ ScoreCannon::Score::Score(void* g) {
 	maxComboBest = game.sSelect.old.stat_maxcombo;
 	missCount = game.gameplay.player[0].judgecount[1] + game.gameplay.player[0].judgecount[2] + game.gameplay.player[0].totalnotes - game.gameplay.player[0].note_current;
 	missCountBest = game.sSelect.old.playcount <= 0 ? 0 : game.sSelect.old.minbp;
+	irPosition = game.net.rankingData.myRanking;
+	irPositionBest = game.sSelect.old.IRranking;
+	irCount = game.net.rankingData.rankingCount;
 }
 
 bool ScoreCannon::Init(uintptr_t moduleBase) {

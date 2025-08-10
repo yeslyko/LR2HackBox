@@ -41,7 +41,8 @@ public:
 		Score(std::string folder, std::string title, std::string subtitle, Lamp lamp, Lamp lampBest, 
 			  Target target, Random arrange, std::string random, int rseed,
 			  int exScore, int exScoreMax, int exScoreBest, int exScoreTarget,
-			  int maxCombo, int maxComboBest, int missCount, int missCountBest);
+			  int maxCombo, int maxComboBest, int missCount, int missCountBest, 
+			  int irPosition, int irPositionBest, int irCount);
 		Score(void* game);
 		std::string folder;
 		std::string title;
@@ -60,6 +61,9 @@ public:
 		int maxComboBest = 0;
 		int missCount = 0;
 		int missCountBest = 0;
+		int irPosition = 0;
+		int irPositionBest = 0;
+		int irCount = 0;
 	};
 	bool Init(uintptr_t moduleBase);
 	bool Deinit();
