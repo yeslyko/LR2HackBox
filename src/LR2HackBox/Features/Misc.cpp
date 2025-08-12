@@ -634,6 +634,7 @@ int Misc::OnAddDrawingBuffer_LN_Fixed(void* drbIn, void* srcLsIn, void* srcLeIn,
 	LR2::DSTstruct* dst = (LR2::DSTstruct*)dstIn;
 	LR2::Timer* T = (LR2::Timer*)TIn;
 	LR2::NoteStruct* lnObj = (LR2::NoteStruct*)lnObjIn;
+	LR2::game& game = *LR2HackBox::Get().GetGame();
 
 	typedef LR2::DSTdraw(__cdecl* tSetDSTdrawByTime)(LR2::DSTstruct dst, double time);
 	tSetDSTdrawByTime SetDSTdrawByTime = (tSetDSTdrawByTime)0x49A840;
@@ -646,6 +647,9 @@ int Misc::OnAddDrawingBuffer_LN_Fixed(void* drbIn, void* srcLsIn, void* srcLeIn,
 
 	LR2::DSTdraw tDstd;
 	int grh;
+
+	float absoluteScrollSpeed = (game.config.play.basespeed / 100.0) * game.config.play.hiSpeed[0] * game.gameplay.speedmultiplier * game.gameplay.BPM / 150.f;
+	float blinkAdjust = absoluteScrollSpeed * 0.00004;
 
 	if (dst->dstCount <= 0 || dst->dataSize <= 0 || srcLs->graphcount <= 0 || srcLe->graphcount <= 0 || srcLb->graphcount <= 0) return 0;
 
@@ -675,38 +679,8 @@ int Misc::OnAddDrawingBuffer_LN_Fixed(void* drbIn, void* srcLsIn, void* srcLeIn,
 	tDstd.subHandle = dst->n;
 	tDstd.blend = 1;
 	tDstd.a = alpha;
-	tDstd.y += longY + tDstd.h;
-	tDstd.h = shiftY - longY - tDstd.h;
-	if (tDstd.time != -1 && grh != -1) AddDrawingBuffer(drb, grh, &tDstd);
-
-	//start
-	tDstd = SetDSTdrawByTime(*dst, GetTimeLapse(dst->timer, T));
-	tDstd.w += sizeX;
-	tDstd.h += sizeY;
-	tDstd.x -= sizeX * 0.5;
-	tDstd.y -= sizeY * 0.5;
-	tDstd.sortID += 2;
-	if (srcLs->timer == dst->timer) {
-		if (lnObj->active > 0) {
-			grh = srcLs->grHandles[GetSRCcycleNow(*srcLs, GetTimeLapse(srcLs->timer, T) - dst->draw->time)];
-		}
-		else {
-			grh = srcLs->grHandles[0];
-		}
-	}
-	else {
-		if (lnObj->active > 0) {
-			grh = srcLs->grHandles[GetSRCcycleNow(*srcLs, GetTimeLapse(srcLs->timer, T))];
-		}
-		else {
-			grh = srcLs->grHandles[0];
-		}
-	}
-	tDstd.x += shiftX;
-	tDstd.subHandle = dst->n;
-	tDstd.blend = 1;
-	tDstd.a = alpha;
-	tDstd.y += shiftY;
+	tDstd.y += longY + tDstd.h - blinkAdjust;
+	tDstd.h = std::max(shiftY - longY - tDstd.h + blinkAdjust, 0.f);
 	if (tDstd.time != -1 && grh != -1) AddDrawingBuffer(drb, grh, &tDstd);
 
 	//end
@@ -737,6 +711,43 @@ int Misc::OnAddDrawingBuffer_LN_Fixed(void* drbIn, void* srcLsIn, void* srcLeIn,
 	tDstd.blend = 1;
 	tDstd.a = alpha;
 	tDstd.y += longY;
+	float tailBottomY = tDstd.y;
+	if (tDstd.time != -1 && grh != -1) AddDrawingBuffer(drb, grh, &tDstd);
+
+	//start
+	tDstd = SetDSTdrawByTime(*dst, GetTimeLapse(dst->timer, T));
+	tDstd.w += sizeX;
+	tDstd.h += sizeY;
+	tDstd.x -= sizeX * 0.5;
+	tDstd.y -= sizeY * 0.5;
+	tDstd.sortID += 2;
+	if (srcLs->timer == dst->timer) {
+		if (lnObj->active > 0) {
+			grh = srcLs->grHandles[GetSRCcycleNow(*srcLs, GetTimeLapse(srcLs->timer, T) - dst->draw->time)];
+		}
+		else {
+			grh = srcLs->grHandles[0];
+		}
+	}
+	else {
+		if (lnObj->active > 0) {
+			grh = srcLs->grHandles[GetSRCcycleNow(*srcLs, GetTimeLapse(srcLs->timer, T))];
+		}
+		else {
+			grh = srcLs->grHandles[0];
+		}
+	}
+	tDstd.x += shiftX;
+	tDstd.subHandle = dst->n;
+	tDstd.blend = 1;
+	tDstd.a = alpha;
+	tDstd.y += shiftY;
+	if (alpha != 255) {
+		float shrinkFromTail = std::min(tDstd.y - tDstd.h - tailBottomY, 0.f);
+		if (shrinkFromTail < 0.f) shrinkFromTail = std::max(shrinkFromTail, -tDstd.h);
+		tDstd.h += shrinkFromTail;
+		tDstd.y -= shrinkFromTail;
+	}
 	if (tDstd.time != -1 && grh != -1) AddDrawingBuffer(drb, grh, &tDstd);
 
 	return 1;
@@ -750,6 +761,13 @@ int Misc::OnAddDrawingBuffer_LN(void* drb, void* srcLs, void* srcLe, void* srcLb
 		return misc.OnAddDrawingBuffer_LN_Fixed((LR2::DrawingBuf*)drb, (LR2::SRCstruct*)srcLs, (LR2::SRCstruct*)srcLe, (LR2::SRCstruct*)srcLb, (LR2::DSTstruct*)dst, (LR2::Timer*)T, shiftX, shiftY, longY, alpha, sizeX, sizeY, lnObj);
 	}
 	return AddDrawingBuffer_LN((LR2::DrawingBuf*)drb, (LR2::SRCstruct*)srcLs, (LR2::SRCstruct*)srcLe, (LR2::SRCstruct*)srcLb, (LR2::DSTstruct*)dst, (LR2::Timer*)T, shiftX, shiftY, longY, alpha, sizeX, sizeY);
+}
+
+typedef int(__cdecl* tAddDrawingBuffer_PlayArea)(LR2::DrawingBuf* drb, LR2::SRCstruct* src, LR2::DSTstruct* dst, LR2::Timer* T, float shiftX, float shiftY, int alpha, float sizeX, float sizeY, char flag);
+tAddDrawingBuffer_PlayArea AddDrawingBuffer_PlayArea = (tAddDrawingBuffer_PlayArea)0x49D630;
+int Misc::OnAddDrawingBuffer_PlayArea(void* drb, void* src, void* dst, void* T, float shiftX, float shiftY, int alpha, float sizeX, float sizeY, char flag) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+	return AddDrawingBuffer_PlayArea((LR2::DrawingBuf*)drb, (LR2::SRCstruct*)src, (LR2::DSTstruct*)dst, (LR2::Timer*)T, shiftX, shiftY, alpha, sizeX, sizeY, flag);
 }
 
 void Misc::OnAutoadjustDec(SafetyHookContext& regs) {
@@ -1014,6 +1032,11 @@ void Misc::SetHooks() {
 		std::cout << "Couldn't hook SaveDrawScreenToPNG" << std::endl;
 	}
 
+	if (MH_CreateHookEx((LPVOID)AddDrawingBuffer_PlayArea, &OnAddDrawingBuffer_PlayArea, &AddDrawingBuffer_PlayArea) != MH_OK)
+	{
+		std::cout << "Couldn't hook AddDrawingBuffer_PlayArea" << std::endl;
+	}
+
 	if (MH_CreateHookEx((LPVOID)AddDrawingBuffer_LN, &OnAddDrawingBuffer_LN, &AddDrawingBuffer_LN) != MH_OK)
 	{
 		std::cout << "Couldn't hook AddDrawingBuffer_LN" << std::endl;
@@ -1212,11 +1235,11 @@ void Misc::Menu() {
 	ImGui::SameLine();
 	HelpMarker("Mirrors controls for hi-speed and lanecover values, making lanecover on 1 and 2 instead of 6 and 7");
 
-	if (ImGui::Checkbox("Fix LN Animation", &mIsLNAnimFix)) {
+	if (ImGui::Checkbox("Fix LN Render", &mIsLNAnimFix)) {
 		config.WriteValueAndSave("bLNAnimFix", mIsLNAnimFix);
 	}
 	ImGui::SameLine();
-	HelpMarker("Fixes a bug, where all visible LNs of the same column would play the hold animation, instead of only the LN you are holding");
+	HelpMarker("Fixes a bug, where all visible LNs of the same column would play the hold animation, instead of only the LN you are holding.\n\nSmoothes LN length inconsistency, which created small gaps between LN body, its tail and head.\n\nFixes brightness inconsistency for missed LNs, when they reach the judgeline.");
 
 	if (ImGui::Checkbox("Autoadjust Clamp", &mIsAutoadjustClamp)) {
 		config.WriteValueAndSave("bAutoadjustClamp", mIsAutoadjustClamp);
