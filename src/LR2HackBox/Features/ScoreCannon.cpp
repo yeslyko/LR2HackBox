@@ -3,9 +3,11 @@
 
 #include <print>
 #include <codecvt>
+#include <exception>
 
 #include "LR2HackBox/LR2HackBox.hpp"
 #include "Unrandomizer.hpp"
+#include "Helpers/Helpers.hpp"
 
 #include <safetyhook.hpp>
 #include <json/single_include/nlohmann/json.hpp>
@@ -246,7 +248,6 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 
 bool ScoreCannon::PostScore(const Score& score, const std::string& screenshotPath) {
 	std::string data = GetJsonString(score);
-	std::println("{}", data);
 	for (auto& url : mUrls) {
 		std::thread([url, data, screenshotPath]() {
 			cpr::Response r = cpr::Post(
@@ -258,10 +259,14 @@ bool ScoreCannon::PostScore(const Score& score, const std::string& screenshotPat
 				}
 			);
 			if (r.error.code != cpr::ErrorCode::OK) {
+				std::println("{}", data);
 				std::println("[LR2HackBox] Coulnd't POST to {}: {}", url, r.error.message);
+				std::fflush(stdout);
 			}
 			else if (r.status_code != 200) {
+				std::println("{}", data);
 				std::println("[LR2HackBox] Message rejected by {}: {}", url, r.status_line);
+				std::fflush(stdout);
 			}
 		}).detach();
 	}
