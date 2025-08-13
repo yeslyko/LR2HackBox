@@ -216,7 +216,7 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 						{"value", std::format("({})", GetDelta(score.maxCombo, score.maxComboBest))}
 					},
 					{
-						{"name", std::format("Miss Count: {} {}", score.missCount, GetDeltaNotation(score.missCount, score.missCountBest))},
+						{"name", std::format("Miss Count: {} {}", score.missCount, GetDeltaNotation(score.missCountBest, score.missCount))},
 						{"value", std::format("({})", GetDelta(score.missCount, score.missCountBest))}
 					},
 					{
