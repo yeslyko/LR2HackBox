@@ -212,7 +212,7 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 						{"value", std::format("({})", GetDelta(score.exScore, score.exScoreBest))}
 					},
 					{
-						{"name", std::format("Max Combo: {} {}", score.maxCombo, GetDeltaNotation(score.maxCombo, score.maxComboBest))},
+						{"name", std::format("Max Combo: {}/{} {}", score.maxCombo, score.exScoreMax / 2, GetDeltaNotation(score.maxCombo, score.maxComboBest))},
 						{"value", std::format("({})", GetDelta(score.maxCombo, score.maxComboBest))}
 					},
 					{
