@@ -524,14 +524,6 @@ int Misc::OnSaveDrawScreenToPNG(int x1, int y1, int x2, int y2, const char* File
 		std::filesystem::create_directories(directory);
 	int result = SaveDrawScreenToPNG(x1, y1, x2, y2, path.c_str(), CompressionLevel);
 
-	if (game.procSelecter == 5 || game.procSelecter == 13) {
-		ScoreCannon& spammer = *(ScoreCannon*)LR2HackBox::Get().mScoreCannon.get();
-		if (spammer.mIsEnabled && !spammer.mAlreadySent) {
-			ScoreCannon::Score score(&game);
-			spammer.PostScore(score, path);
-		}
-	}
-
 	if (misc.mIsScreenshotsCopybuffer) {
 		ULONG_PTR gdiplusToken = NULL;
 		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
@@ -565,6 +557,14 @@ int Misc::OnSaveDrawScreenToPNG(int x1, int y1, int x2, int y2, const char* File
 		DeleteObject(hbitmap);
 
 		Gdiplus::GdiplusShutdown(gdiplusToken);
+	}
+
+	if (game.procSelecter == 5 || game.procSelecter == 13) {
+		ScoreCannon& spammer = *(ScoreCannon*)LR2HackBox::Get().mScoreCannon.get();
+		if (spammer.mIsEnabled && !spammer.mAlreadySent) {
+			ScoreCannon::Score score(&game);
+			spammer.PostScore(score, path);
+		}
 	}
 
 	return result;
