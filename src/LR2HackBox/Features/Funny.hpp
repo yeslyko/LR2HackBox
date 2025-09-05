@@ -12,9 +12,15 @@ public:
 
 private:
 	static void OnDrawNote(SafetyHookContext& regs);
+	static int OnProcSinglenote(void* g, int lane, int keypress, int timing, int player);
+	safetyhook::InlineHook oProcSinglenote;
+
+	int(__stdcall* FMOD_Channel_GetPan)(void*, float*) = nullptr;
+	int(__stdcall* FMOD_Channel_SetPan)(void*, float) = nullptr;
 
 	std::vector<SafetyHookMid> mMidHooks;
 
 	bool mIsInvisibleScratch = false;
 	bool mIsMetronome = false;
+	bool mIsSpatialKeysounds = false;
 };
