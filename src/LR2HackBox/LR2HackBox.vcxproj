@@ -25,6 +25,7 @@
     <ClCompile Include="Features\MemoryTracker.cpp" />
     <ClCompile Include="Features\Misc.cpp" />
     <ClCompile Include="Features\Numbers.cpp" />
+    <ClCompile Include="Features\RivalLeaderboard.cpp" />
     <ClCompile Include="Features\ScoreCannon.cpp" />
     <ClCompile Include="Features\Unrandomizer.cpp" />
     <ClCompile Include="Features\Version.cpp" />
@@ -35,6 +36,7 @@
     <ClInclude Include="Features\MemoryTracker.hpp" />
     <ClInclude Include="Features\Misc.hpp" />
     <ClInclude Include="Features\Numbers.hpp" />
+    <ClInclude Include="Features\RivalLeaderboard.hpp" />
     <ClInclude Include="Features\ScoreCannon.hpp" />
     <ClInclude Include="Features\Unrandomizer.hpp" />
     <ClInclude Include="Features\Unrandomizer_SeedMap7K.hpp" />

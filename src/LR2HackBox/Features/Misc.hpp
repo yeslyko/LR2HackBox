@@ -117,4 +117,5 @@ private:
 	bool mIsSkipResultWaitIR = false;
 	bool mIsSkipResultSub = false;
 	bool mIsResultQuickIR = false;
+	bool mIsRivalLeaderboard = false;
 };

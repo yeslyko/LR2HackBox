@@ -20,6 +20,7 @@
 #include "Features/Version.hpp"
 #include "Features/GameOptions.hpp"
 #include "Features/ScoreCannon.hpp"
+#include "Features/RivalLeaderboard.hpp"
 
 #pragma comment(lib, "Helpers.lib")
 #pragma comment(lib, "ImGuiInjector.lib")
@@ -63,6 +64,7 @@ bool LR2HackBox::EarlyHook() {
 	mNumbers.reset(new Numbers());
 	mGameOptions.reset(new GameOptions());
 	mScoreCannon.reset(new ScoreCannon());
+	mRivalLeaderboard.reset(new RivalLeaderboard());
 
 	mUnrandomizer->EarlyInit(mModuleBase);
 	mFunny->EarlyInit(mModuleBase);
@@ -71,6 +73,7 @@ bool LR2HackBox::EarlyHook() {
 	mNumbers->EarlyInit(mModuleBase);
 	mGameOptions->EarlyInit(mModuleBase);
 	mScoreCannon->EarlyInit(mModuleBase);
+	mRivalLeaderboard->EarlyInit(mModuleBase);
 
 	return true;
 }
@@ -93,6 +96,7 @@ bool LR2HackBox::Hook() {
 	mNumbers->Init(mModuleBase);
 	mGameOptions->Init(mModuleBase);
 	mScoreCannon->Init(mModuleBase);
+	mRivalLeaderboard->Init(mModuleBase);
 
 	return true;
 }
@@ -105,7 +109,7 @@ bool LR2HackBox::Unhook() {
 	mNumbers->Deinit();
 	mGameOptions->Deinit();
 	mScoreCannon->Deinit();
-	IFMEMORYTRACKER(mMemoryTracker->Deinit());
+	mRivalLeaderboard->Deinit();
 	return true;
 }
 

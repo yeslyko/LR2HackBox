@@ -14,6 +14,7 @@
 #include "AnalogInput.hpp"
 #include "Numbers.hpp"
 #include "ScoreCannon.hpp"
+#include "RivalLeaderboard.hpp"
 
 #include "ImGuiInjector/ImGuiInjector.hpp"
 #include <safetyhook.hpp>
@@ -1286,6 +1287,14 @@ void Misc::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("Loads IR position for result screen as soon as the score sends, rather than waiting for all leaderboard scores to load.\nBest paired with \"Skip Result Wait for IR\".");
+
+	RivalLeaderboard& rivalLb = *(RivalLeaderboard*)LR2HackBox::Get().mRivalLeaderboard.get();
+	mIsRivalLeaderboard = rivalLb.GetEnabled();
+	if (ImGui::Checkbox("Rival Leaderboard", &mIsRivalLeaderboard)) {
+		rivalLb.SetEnabled(mIsRivalLeaderboard);
+	}
+	ImGui::SameLine();
+	HelpMarker("While viewing global leaderboard holding 4, you can switch the leaderboard to display your rivals by holding 'SELECT'. Pressing 'SELECT' again switches it back. Uses cached data from 'LR2files/Rival' directory");
 
 	if (ImGui::Checkbox("Analog scratch support", &mIsAnalogInput)) {
 		config.WriteValueAndSave("bAnalogInput", mIsAnalogInput);
