@@ -50,7 +50,7 @@ void JudgeLimiter::Menu() {
     ConfigManager &config = *LR2HackBox::Get().mConfig;
 
     if (ImGui::Checkbox("Enabled", &mEnabled)) {
-        config.WriteValueAndSave("bEnabled", mEnabled);
+        config.WriteValueAndSave("bLimiterEnabled", mEnabled);
     }
 
     ImGui::TextUnformatted("Max. GREAT");
