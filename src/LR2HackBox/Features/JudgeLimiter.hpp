@@ -15,9 +15,10 @@ private:
 
 	SafetyHookInline oApplyJudgeNote;
 
-	bool mEnabled = false;
+	bool mIsEnabled = false;
+	bool mIsNewRandom = false;
 	int mMaxGreat = -1;
 	int mMaxGood = -1;
 	int mMaxBP = -1;
-	float mMinScore = 0;
+	float mMinScoreRate = 0.f;
 };

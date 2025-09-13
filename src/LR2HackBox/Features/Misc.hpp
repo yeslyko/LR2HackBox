@@ -17,7 +17,7 @@ public:
 	template<typename T>
 	static bool SqliteGetColumn(T* output, std::string querry, int columnIdx);
 
-	void QuickRestart(bool sameRandom);
+	void QuickRestart(bool newRandom);
 
 private:
 	struct CustomSelectEntry {

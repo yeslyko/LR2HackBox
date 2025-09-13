@@ -72,6 +72,16 @@ bool Misc::SqliteGetColumn(T* output, std::string querry, int columnIdx) {
 	return success;
 }
 
+static void StopKeysounds() {
+	typedef int(__cdecl* tStopSound)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound);
+	tStopSound StopSound = (tStopSound)0x4B8140;
+
+	LR2::game& game = *LR2HackBox::Get().GetGame();
+	for (int i = 0; i < 6480; i++) {
+		StopSound(&game.audio, &game.gameplay.keysound[i]);
+	}
+}
+
 void Misc::OnSetRetryFlag(SafetyHookContext& regs) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	if (!misc.mIsRetryTweaks) return;
@@ -89,23 +99,29 @@ void Misc::OnSetRetryFlag(SafetyHookContext& regs) {
 	}
 }
 
-static void PreventKeysoundLeakOnPlayInit() {
-	char* flag = (char*)0x4B0830;
-	DWORD oldProtection = 0;
-	BOOL hResult = VirtualProtect(flag, 3, PAGE_EXECUTE_READWRITE, &oldProtection);
-	memset(flag, 0x90, 3); // for (int i = 0; i < 1296; i++) gp->keysound[i].load = 0; @LR2input.cpp1404
-	DWORD discard = 0;
-	VirtualProtect(flag, 3, oldProtection, &discard);
-}
-
-static void StopKeysounds() {
-	typedef int(__cdecl* tStopSound)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound);
-	tStopSound StopSound = (tStopSound)0x4B8140;
-
+void Misc::QuickRestart(bool newRandom) {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
-	for (int i = 0; i < 6480; i++) {
-		StopSound(&game.audio, &game.gameplay.keysound[i]);
+	game.procPhase = 0;
+	game.procSelecter = 4;
+	game.gameplay.flag_retry = newRandom ? 0 : 1;
+	game.gameplay.randomseed = newRandom ? 0 : game.gameplay.randomseed;
+	game.gameplay.bmsResourceLoaded = 1;
+
+	// Reset fast/slow stats.
+	game.net.rankingData.clearPlayers[2] = 0;
+	game.net.rankingData.clearPlayers[3] = 0;
+	game.net.rankingData.clearPlayers[4] = 0;
+
+	// Reset gauge type for GAS.
+	game.config.play.gaugeOption[0] = mOrigGaugeType;
+
+	if (game.gameplay.courseType != -1 && game.gameplay.courseStageNow != 0) {
+		game.gameplay.courseStageNow = 0;
+		game.gameplay.bmsResourceLoaded = 0;
+		game.gameplay.flag_retry = 0;
 	}
+
+	StopKeysounds();
 }
 
 static LR2::SOUNDDATA* metronomeMeasureFx;
@@ -136,6 +152,15 @@ void Misc::OnPlayISetSelecter(SafetyHookContext& regs) {
 	else if (game.KeyInput.p1_buttonInput[13] == 1 || game.KeyInput.p2_buttonInput[13] == 1) {
 		misc.QuickRestart(false);
 	}
+}
+
+static void PreventKeysoundLeakOnPlayInit() {
+	char* flag = (char*)0x4B0830;
+	DWORD oldProtection = 0;
+	BOOL hResult = VirtualProtect(flag, 3, PAGE_EXECUTE_READWRITE, &oldProtection);
+	memset(flag, 0x90, 3); // for (int i = 0; i < 1296; i++) gp->keysound[i].load = 0; @LR2input.cpp1404
+	DWORD discard = 0;
+	VirtualProtect(flag, 3, oldProtection, &discard);
 }
 
 void Misc::OnInit(SafetyHookContext& regs) {
@@ -1275,51 +1300,4 @@ void Misc::Menu() {
 	}*/
 
 	ImGui::Unindent();
-}
-
-void Misc::QuickRestart(bool sameRandom) {
-	LR2::game &game = *LR2HackBox::Get().GetGame();
-	if (sameRandom) {
-		game.procPhase = 0;
-		game.procSelecter = 4;
-		game.gameplay.flag_retry = 0;
-		game.gameplay.randomseed = 0;
-		game.gameplay.bmsResourceLoaded = 1;
-
-		// Reset fast/slow stats.
-		game.net.rankingData.clearPlayers[2] = 0;
-		game.net.rankingData.clearPlayers[3] = 0;
-		game.net.rankingData.clearPlayers[4] = 0;
-
-		// Reset gauge type for GAS.
-		game.config.play.gaugeOption[0] = mOrigGaugeType;
-
-		if (game.gameplay.courseType != -1 && game.gameplay.courseStageNow != 0) {
-			game.gameplay.courseStageNow = 0;
-			game.gameplay.bmsResourceLoaded = 0;
-		}
-
-		StopKeysounds();
-	} else {
-		game.procPhase = 0;
-		game.procSelecter = 4;
-		game.gameplay.flag_retry = 1;
-		game.gameplay.bmsResourceLoaded = 1;
-
-		// Reset fast/slow stats.
-		game.net.rankingData.clearPlayers[2] = 0;
-		game.net.rankingData.clearPlayers[3] = 0;
-		game.net.rankingData.clearPlayers[4] = 0;
-
-		// Reset gauge type for GAS.
-		game.config.play.gaugeOption[0] = mOrigGaugeType;
-
-		if (game.gameplay.courseType != -1 && game.gameplay.courseStageNow != 0) {
-			game.gameplay.courseStageNow = 0;
-			game.gameplay.bmsResourceLoaded = 0;
-			game.gameplay.flag_retry = 0;
-		}
-
-		StopKeysounds();
-	}
 }
