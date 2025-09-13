@@ -129,49 +129,12 @@ void Misc::OnPlayISetSelecter(SafetyHookContext& regs) {
 	if (game.gameplay.replay.status > 1) return;
 	//if (game.gameplay.courseType != -1) return;
 	if (game.gameplay.player[0].totalnotes <= game.gameplay.player[0].note_current) return;
+	
 	if (game.KeyInput.p1_buttonInput[12] == 1 || game.KeyInput.p2_buttonInput[12] == 1) {
-		game.procPhase = 0;
-		game.procSelecter = 4;
-		game.gameplay.flag_retry = 0;
-		game.gameplay.randomseed = 0;
-		game.gameplay.bmsResourceLoaded = 1;
-
-		// Reset fast/slow stats.
-		game.net.rankingData.clearPlayers[2] = 0;
-		game.net.rankingData.clearPlayers[3] = 0;
-		game.net.rankingData.clearPlayers[4] = 0;
-
-		// Reset gauge type for GAS.
-		game.config.play.gaugeOption[0] = misc.mOrigGaugeType;
-
-		if (game.gameplay.courseType != -1 && game.gameplay.courseStageNow != 0) {
-			game.gameplay.courseStageNow = 0;
-			game.gameplay.bmsResourceLoaded = 0;
-		}
-
-		StopKeysounds();
+		misc.QuickRestart(true);
 	}
 	else if (game.KeyInput.p1_buttonInput[13] == 1 || game.KeyInput.p2_buttonInput[13] == 1) {
-		game.procPhase = 0;
-		game.procSelecter = 4;
-		game.gameplay.flag_retry = 1;
-		game.gameplay.bmsResourceLoaded = 1;
-
-		// Reset fast/slow stats.
-		game.net.rankingData.clearPlayers[2] = 0;
-		game.net.rankingData.clearPlayers[3] = 0;
-		game.net.rankingData.clearPlayers[4] = 0;
-
-		// Reset gauge type for GAS.
-		game.config.play.gaugeOption[0] = misc.mOrigGaugeType;
-
-		if (game.gameplay.courseType != -1 && game.gameplay.courseStageNow != 0) {
-			game.gameplay.courseStageNow = 0;
-			game.gameplay.bmsResourceLoaded = 0;
-			game.gameplay.flag_retry = 0;
-		}
-
-		StopKeysounds();
+		misc.QuickRestart(false);
 	}
 }
 
@@ -1312,4 +1275,51 @@ void Misc::Menu() {
 	}*/
 
 	ImGui::Unindent();
+}
+
+void Misc::QuickRestart(bool sameRandom) {
+	LR2::game &game = *LR2HackBox::Get().GetGame();
+	if (sameRandom) {
+		game.procPhase = 0;
+		game.procSelecter = 4;
+		game.gameplay.flag_retry = 0;
+		game.gameplay.randomseed = 0;
+		game.gameplay.bmsResourceLoaded = 1;
+
+		// Reset fast/slow stats.
+		game.net.rankingData.clearPlayers[2] = 0;
+		game.net.rankingData.clearPlayers[3] = 0;
+		game.net.rankingData.clearPlayers[4] = 0;
+
+		// Reset gauge type for GAS.
+		game.config.play.gaugeOption[0] = mOrigGaugeType;
+
+		if (game.gameplay.courseType != -1 && game.gameplay.courseStageNow != 0) {
+			game.gameplay.courseStageNow = 0;
+			game.gameplay.bmsResourceLoaded = 0;
+		}
+
+		StopKeysounds();
+	} else {
+		game.procPhase = 0;
+		game.procSelecter = 4;
+		game.gameplay.flag_retry = 1;
+		game.gameplay.bmsResourceLoaded = 1;
+
+		// Reset fast/slow stats.
+		game.net.rankingData.clearPlayers[2] = 0;
+		game.net.rankingData.clearPlayers[3] = 0;
+		game.net.rankingData.clearPlayers[4] = 0;
+
+		// Reset gauge type for GAS.
+		game.config.play.gaugeOption[0] = mOrigGaugeType;
+
+		if (game.gameplay.courseType != -1 && game.gameplay.courseStageNow != 0) {
+			game.gameplay.courseStageNow = 0;
+			game.gameplay.bmsResourceLoaded = 0;
+			game.gameplay.flag_retry = 0;
+		}
+
+		StopKeysounds();
+	}
 }
