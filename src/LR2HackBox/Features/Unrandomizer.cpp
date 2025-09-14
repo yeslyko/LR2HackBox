@@ -34,6 +34,11 @@ void Unrandomizer::OnSetRandomSeed(SafetyHookContext& regs) {
 
 	uintptr_t* randomseed = &regs.eax;
 
+	if (unrandomizer.mIsSeeded) {
+		*randomseed = unrandomizer.mSeed;
+		return;
+	}
+
 	int keymode = std::min(game.sSelect.metaSelected.keymode, 7);
 
 	if (keymode != 5 && keymode != 7) return;
@@ -368,6 +373,16 @@ void Unrandomizer::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("R-Random cyclically shifts the columns by a random amount, as well as has a chance to mirror them\n\nOnly this or random trainer can be enabled at a time");
+	ImGui::Checkbox("##unrandomizer_isSeed", &mIsSeeded);
+	ImGui::SameLine();
+	ImGui::TextUnformatted("Force Seed:");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(ImGui::CalcTextSize("32767X").x);
+	if (ImGui::InputInt("##unrandomizer_seed", &mSeed, 0)) {
+		mSeed = std::clamp(mSeed, 0, 0x7FFF);
+	}
+	ImGui::SameLine();
+	HelpMarker("Force specific seed for the BMS parser to use. Impacts #RANDOM operations, all column shuffle types, etc. Possible values are 0 - 32767. Prioritized over other options.");
 	ImGui::Unindent();
 }
 
