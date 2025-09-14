@@ -1,6 +1,7 @@
 #include "BaseModels/ModFeature.hpp"
 
 #include <safetyhook.hpp>
+#include <LR2Mem/LR2Typedefs.hpp>
 
 #include <vector>
 #include <string>
@@ -34,11 +35,17 @@ private:
 		int ranking = 0;
 		std::string comment;
 	};
-	static int OnRankingAutoUpdate(void* g);
+	static void RANKINGPLAYER_COPY(RANKINGPLAYER& copyTo, LR2::RANKINGPLAYER& copyFrom);
+	static void LR2RANKINGPLAYER_COPY(LR2::RANKINGPLAYER& copyTo, RANKINGPLAYER& copyFrom);
+
 	static void OnCheckLeaderboardInput(SafetyHookContext& regs);
-	safetyhook::InlineHook oRankingAutoUpdate;
+	static void OnFillBarForEnd(SafetyHookContext& regs);
 	std::vector<SafetyHookMid> mMidHooks;
 
+	void GetRivalList();
+	void UpdateRivalData();
+
+	std::unordered_map<int, bool> mRivals;
 	std::vector<RANKINGPLAYER> mCurSongRivalData;
 	std::string mCurSongHash;
 
