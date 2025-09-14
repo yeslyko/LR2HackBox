@@ -21,6 +21,7 @@
 #include "Features/GameOptions.hpp"
 #include "Features/ScoreCannon.hpp"
 #include "Features/RivalLeaderboard.hpp"
+#include "Features/JudgeLimiter.hpp"
 
 #pragma comment(lib, "Helpers.lib")
 #pragma comment(lib, "ImGuiInjector.lib")
@@ -65,6 +66,7 @@ bool LR2HackBox::EarlyHook() {
 	mGameOptions.reset(new GameOptions());
 	mScoreCannon.reset(new ScoreCannon());
 	mRivalLeaderboard.reset(new RivalLeaderboard());
+	mJudgeLimiter.reset(new JudgeLimiter());
 
 	mUnrandomizer->EarlyInit(mModuleBase);
 	mFunny->EarlyInit(mModuleBase);
@@ -74,6 +76,7 @@ bool LR2HackBox::EarlyHook() {
 	mGameOptions->EarlyInit(mModuleBase);
 	mScoreCannon->EarlyInit(mModuleBase);
 	mRivalLeaderboard->EarlyInit(mModuleBase);
+	mJudgeLimiter->EarlyInit(mModuleBase);
 
 	return true;
 }
@@ -97,6 +100,7 @@ bool LR2HackBox::Hook() {
 	mGameOptions->Init(mModuleBase);
 	mScoreCannon->Init(mModuleBase);
 	mRivalLeaderboard->Init(mModuleBase);
+	mJudgeLimiter->Init(mModuleBase);
 
 	return true;
 }
@@ -110,6 +114,7 @@ bool LR2HackBox::Unhook() {
 	mGameOptions->Deinit();
 	mScoreCannon->Deinit();
 	mRivalLeaderboard->Deinit();
+	mJudgeLimiter->Deinit();
 	return true;
 }
 
@@ -211,6 +216,10 @@ void LR2HackBoxMenu::Loop() {
 
 	if (ImGui::CollapsingHeader("Discord Score Webhook")) {
 		LR2HackBox::Get().mScoreCannon->Menu();
+	}
+
+	if (ImGui::CollapsingHeader("Judge Limiter")) {
+		LR2HackBox::Get().mJudgeLimiter->Menu();
 	}
 
 	if (ImGui::CollapsingHeader("Game Options")) {
