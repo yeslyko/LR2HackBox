@@ -1,7 +1,7 @@
 #include "BaseModels/ModFeature.hpp"
-#include <safetyhook.hpp>
 
-#include "LR2HackBox/LR2HackBox.hpp"
+#include <safetyhook.hpp>
+#include <LR2Mem/LR2Typedefs.hpp>
 
 class JudgeLimiter : public ModFeature {
 public:

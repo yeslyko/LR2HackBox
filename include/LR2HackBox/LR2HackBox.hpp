@@ -1,4 +1,3 @@
-#pragma once
 #include "BaseModels/ModBody.hpp"
 #include "BaseModels/ImGuiMenu.hpp"
 #include "BaseModels/ModFeature.hpp"
