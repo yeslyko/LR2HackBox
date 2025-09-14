@@ -33,7 +33,6 @@ bool JudgeLimiter::Init(uintptr_t moduleBase) {
     LR2::game &game = *LR2HackBox::Get().GetGame();
     ConfigManager &config = *LR2HackBox::Get().mConfig;
 
-    mIsEnabled = config.ReadValue("bLimiterEnabled", false);
     mIsNewRandom = config.ReadValue("bLimiterNewRandom", false);
     mMaxGreat = config.ReadValue("iLimiterMaxGreat", -1);
     mMaxGood = config.ReadValue("iLimiterMaxGood", -1);
@@ -63,9 +62,7 @@ static void HelpMarker(const char* desc) {
 void JudgeLimiter::Menu() {
     ConfigManager &config = *LR2HackBox::Get().mConfig;
 
-    if (ImGui::Checkbox("Enable", &mIsEnabled)) {
-        config.WriteValueAndSave("bLimiterEnabled", mIsEnabled);
-    }
+    if (ImGui::Checkbox("Enable", &mIsEnabled));
     ImGui::SameLine();
     HelpMarker("When enabled, if the set stat conditions can no longer be met during gameplay, the play will restart automatically. Set value to -1 to ignore a condition.");
 
