@@ -247,6 +247,8 @@ void Unrandomizer::DragAndDropKeyDisplay(UnrandomizerState state) {
 	}
 	int sideCount = state == UnrandomizerState_DP ? 2 : 1;
 
+	const float SCALE = ImGui::GetStyle().FontScaleMain;
+	const ImVec2 BUTTON_SIZE = { 50 * SCALE, 80 * SCALE };
 	for (int side = 0; side < sideCount; side++) {
 		uint32_t* laneOrder;
 		std::string dragDropRefName;
@@ -284,10 +286,10 @@ void Unrandomizer::DragAndDropKeyDisplay(UnrandomizerState state) {
 				ImGui::PushStyleColor(ImGuiCol(ImGuiCol_Text), IM_COL32(49, 49, 49, 255));
 			}
 			if (mIsBWPermute) {
-				ImGui::Button("", ImVec2(50, 80));
+				ImGui::Button("", BUTTON_SIZE);
 			}
 			else {
-				ImGui::Button(std::to_string(laneOrder[i]).c_str(), ImVec2(50, 80));
+				ImGui::Button(std::to_string(laneOrder[i]).c_str(), BUTTON_SIZE);
 			}
 
 			ImGui::PopStyleColor(2);
