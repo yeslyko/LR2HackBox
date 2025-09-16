@@ -240,7 +240,7 @@ void Numbers::ColumnStatsMenu() {
 	ImGui::SetCursorPos(oldCursorPos);
 	const float scrollHeight = 14.f * scale;
 	constexpr const int judgeRowCount = sizeof(JudgeCounter) / sizeof(int);
-	constexpr const char* notations[] = { "PGREAT:", " GREAT:", "  GOOD:", "   BAD:", "  POOR:", "E.POOR:", "  FAST:", "  SLOW:", "    CB:", "   EX%%:"};
+	constexpr const char* notations[] = { "PGREAT:", " GREAT:", "  GOOD:", "   BAD:", "  POOR:", "E.POOR:", "  FAST:", "  SLOW:", "    CB:", "   EX%:"};
 	static_assert(std::size(notations) == judgeRowCount);
 	ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg;
 	if (ImGui::BeginTable("JudgementCounterTable", mKeycount + 2, tableFlags, ImVec2(0.f, static_cast<float>(judgeRowCount) * rowHeight + scrollHeight))) {
