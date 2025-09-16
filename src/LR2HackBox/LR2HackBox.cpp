@@ -249,14 +249,15 @@ void LR2HackBoxMenu::Loop() {
 		ImVec2 size = ImGui::GetItemRectSize();
 		float cursorOffset = ImGui::GetCursorPosY() - ImGui::GetWindowHeight();
 		ImVec2 pos;
+		float scale = LR2HackBox::Get().mGlobalScale;
 		// All that math can be optimized... but alas.
-		if (cursorOffset > 0 - size[1] - 12) {
-			pos = { ImGui::GetWindowWidth() - 5.f , ImGui::GetWindowHeight() + cursorOffset + size[1] + 12.f };
+		if (cursorOffset > 0.f - size.y - 12.f * scale) {
+			pos = { ImGui::GetWindowWidth() - ImGui::GetCurrentWindow()->ScrollbarSizes.x , ImGui::GetWindowHeight() + cursorOffset + size.y + 12.f * scale };
 		}
 		else {
 			pos = { ImGui::GetWindowWidth(), ImGui::GetWindowHeight() };
 		}
-		ImGui::SetCursorPos(ImVec2(pos[0] - size[0] - 10.f, pos[1] - size[1] - 10.f));
+		ImGui::SetCursorPos(ImVec2(pos.x - size.x - 10.f * scale, pos.y - size.y - 10.f * scale));
 		if (ImGui::Button("Binds")) {
 			mIsRebindMenu = true;
 		}
