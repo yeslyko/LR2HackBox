@@ -148,7 +148,7 @@ void LR2HackBox::LoadConfig() {
 }
 
 void LR2HackBox::SettingsMenu() {
-	ImGui::SetNextItemWidth(200.f);
+	ImGui::SetNextItemWidth(200.f * ImGui::GetStyle().FontScaleMain);
 	ImGui::SliderFloat("Interface scale", &mGlobalScale, 0.5f, 2.f, "%.2f");
 	ImGui::SameLine();
 	if (ImGui::Button("Apply")) {
@@ -247,7 +247,7 @@ void LR2HackBoxMenu::Loop() {
 		ImVec2 size = ImGui::GetItemRectSize();
 		float cursorOffset = ImGui::GetCursorPosY() - ImGui::GetWindowHeight();
 		ImVec2 pos;
-		float scale = LR2HackBox::Get().mGlobalScale;
+		float scale = ImGui::GetStyle().FontScaleMain;
 		// All that math can be optimized... but alas.
 		if (cursorOffset > 0.f - size.y - 12.f * scale) {
 			pos = { ImGui::GetWindowWidth() - ImGui::GetCurrentWindow()->ScrollbarSizes.x , ImGui::GetWindowHeight() + cursorOffset + size.y + 12.f * scale };
@@ -293,13 +293,14 @@ void LR2HackBoxMenu::BindingsMenu() {
 			ImGui::PushStyleColor(ImGuiCol(ImGuiCol_Button), IM_COL32(0, 0, 139, 255));
 			ImGui::PushStyleColor(ImGuiCol(ImGuiCol_Text), IM_COL32(230, 230, 230, 255));
 		}
-		if (ImGui::Button(mMenuBindingAwaitsRebind.first == binding.first ? "?" : keycodeName.c_str(), ImVec2(46, 23))) {
+		float scale = ImGui::GetStyle().FontScaleMain;
+		if (ImGui::Button(mMenuBindingAwaitsRebind.first == binding.first ? "?" : keycodeName.c_str(), ImVec2(46.f * scale, 23.f * scale))) {
 			mMenuBindingAwaitsRebind = { binding.first, true };
 		}
 		ImGui::PopStyleColor(2);
 		if (mMenuBindingAwaitsRebind.first == binding.first && !binding.second.essential) {
 			ImGui::SameLine();
-			if (ImGui::Button("Remove", ImVec2(0, 23))) {
+			if (ImGui::Button("Remove", ImVec2(0.f, 23.f * scale))) {
 				SetBind(binding.first.c_str(), 0);
 				mMenuBindingAwaitsRebind = { "NONE", false };
 			}
