@@ -1180,8 +1180,6 @@ void Misc::Menu() {
 	LR2::game* game = LR2HackBox::Get().GetGame();
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 
-	ImGui::Indent();
-
 	if (ImGui::Checkbox("Restart Tweaks", &mIsRetryTweaks)) {
 		config.WriteValueAndSave("bRetryTweaks", mIsRetryTweaks);
 	}
@@ -1298,6 +1296,4 @@ void Misc::Menu() {
 	/*if (ImGui::Button("Start Random Song")) {
 		StartRandomFromFolder();
 	}*/
-
-	ImGui::Unindent();
 }

@@ -354,7 +354,6 @@ void Unrandomizer::Menu() {
 
 	ImGui::TextUnformatted("Controls");
 
-	ImGui::Indent();
 	if (GetSeed(mLaneOrderNumL, mGuiKeymode) == 0xFFFF) {
 		ImGui::TextUnformatted("This arrange is missing from the seed map...");
 		mIsEnabled = false;
@@ -385,7 +384,6 @@ void Unrandomizer::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("Force specific seed for the BMS parser to use. Impacts #RANDOM operations, all column shuffle types, etc. Possible values are 0 - 32767. Prioritized over other options.");
-	ImGui::Unindent();
 }
 
 const std::deque<Unrandomizer::RandomHistoryEntry>& Unrandomizer::GetRandomHistory() {

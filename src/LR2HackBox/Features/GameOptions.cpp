@@ -36,7 +36,6 @@ void GameOptions::Menu() {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 
-	ImGui::Indent();
 	const float SCALE = ImGui::GetStyle().FontScaleMain;
 	const float START_X = ImGui::GetCursorPosX();
 	const float COLUMN_WIDTH = 40.f * SCALE;
@@ -138,5 +137,4 @@ void GameOptions::Menu() {
 	ImGui::Checkbox("Disable right click exit", (bool*)&game.config.play.disableleftclickexit);
 	ImGui::SameLine();
 	ImGui::Checkbox("Assign up/down key to hs change", (bool*)&game.config.play.disablecurspeedchange);
-	ImGui::Unindent();
 }

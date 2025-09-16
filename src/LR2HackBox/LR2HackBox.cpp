@@ -148,7 +148,6 @@ void LR2HackBox::LoadConfig() {
 }
 
 void LR2HackBox::SettingsMenu() {
-	ImGui::Indent();
 	ImGui::SetNextItemWidth(200.f);
 	ImGui::SliderFloat("Interface scale", &mGlobalScale, 0.5f, 2.f, "%.2f");
 	ImGui::SameLine();
@@ -164,7 +163,6 @@ void LR2HackBox::SettingsMenu() {
 			StartVersionCheck();
 		}
 	}
-	ImGui::Unindent();
 }
 
 void LR2HackBoxMenu::Loop() {

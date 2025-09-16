@@ -292,7 +292,6 @@ void Numbers::ColumnStatsMenu() {
 
 void Numbers::Menu() {
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
-	ImGui::Indent();
 	constexpr const char* columnStatsHelp = "This is a table with all the judgement statistics for each column individually. Coloured columns represent their respective columns, while right-most column is their total. Autoplay and Replay modes are currently unimplemented.";
 	if (ImGui::TreeNode("Per-Column Stats")) {
 		ImGui::SameLine();
@@ -318,7 +317,6 @@ void Numbers::Menu() {
 		ImGui::SameLine();
 		HelpMarker(columnStatsHelp);
 	}
-	ImGui::Unindent();
 }
 
 void Numbers::SetOpenColumnStatsMenu(bool value) {

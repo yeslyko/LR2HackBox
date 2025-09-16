@@ -62,8 +62,6 @@ static void HelpMarker(const char* desc) {
 void Funny::Menu() {
 	LR2::game* game = LR2HackBox::Get().GetGame();
 
-	ImGui::Indent();
-
 	ImGui::Checkbox("Invisible Scratch", &mIsInvisibleScratch);
 	ImGui::SameLine();
 	HelpMarker("When enabled, will stop scratch notes from rendering.");
@@ -77,7 +75,4 @@ void Funny::Menu() {
 	ImGui::Checkbox("Spatial Keysounds", &mIsSpatialKeysounds);
 	ImGui::SameLine();
 	HelpMarker("Left ear, right ear, left ear, middle, left ear, right ear");
-
-
-	ImGui::Unindent();
 }
