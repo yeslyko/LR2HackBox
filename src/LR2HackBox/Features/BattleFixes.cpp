@@ -31,8 +31,9 @@ void BattleFixes::OnSetSongtimer(SafetyHookContext& regs) {
 
 void BattleFixes::OnCheckMeasurelineAppear(SafetyHookContext& regs) {
     BattleFixes& battleFixes = *(BattleFixes*)(LR2HackBox::Get().mBattleFixes.get());
+    LR2::game& game = *LR2HackBox::Get().GetGame();
+    if (!battleFixes.mIsEnabled || game.config.play.battle != 1) return;
     battleFixes.lastLineBmstime = *(double*)regs.ecx;
-    if (!battleFixes.mIsEnabled) return;
     double highestTimer = std::max(battleFixes.songtimerP1, battleFixes.songtimerP2);
     __asm {
         FFREEP ST(0)
@@ -42,7 +43,8 @@ void BattleFixes::OnCheckMeasurelineAppear(SafetyHookContext& regs) {
 
 void BattleFixes::OnSetBattleP2Y(SafetyHookContext& regs) {
     BattleFixes& battleFixes = *(BattleFixes*)(LR2HackBox::Get().mBattleFixes.get());
-    if (!battleFixes.mIsEnabled) return;
+    LR2::game& game = *LR2HackBox::Get().GetGame();
+    if (!battleFixes.mIsEnabled || game.config.play.battle != 1) return;
     double p2timer = battleFixes.songtimerP2;
     __asm {
         FFREEP ST(0)
@@ -52,7 +54,8 @@ void BattleFixes::OnSetBattleP2Y(SafetyHookContext& regs) {
 
 void BattleFixes::OnCheckMeasurelineDisappear(SafetyHookContext& regs) {
     BattleFixes& battleFixes = *(BattleFixes*)(LR2HackBox::Get().mBattleFixes.get());
-    if (!battleFixes.mIsEnabled) return;
+    LR2::game& game = *LR2HackBox::Get().GetGame();
+    if (!battleFixes.mIsEnabled || game.config.play.battle != 1) return;
     constexpr unsigned short CMP_FALSE = 30759;
     constexpr unsigned short CMP_TRUE = 14375;
     double lowestTimer = std::min(battleFixes.songtimerP1, battleFixes.songtimerP2);
@@ -83,7 +86,8 @@ void BattleFixes::OnSetBpmChangedBmstime(SafetyHookContext& regs) {
 
 int BattleFixes::OnAddDrawingBuffer_PlayArea(LR2::DrawingBuf* drb, LR2::SRCstruct* src, LR2::DSTstruct* dst, LR2::Timer* T, float shiftX, float shiftY, int alpha, float sizeX, float sizeY, char flag) {
     BattleFixes& battleFixes = *(BattleFixes*)(LR2HackBox::Get().mBattleFixes.get());
-    if (!battleFixes.mIsEnabled || battleFixes.lastLineBmstime < 0.) return battleFixes.oAddDrawingBuffer_PlayArea.ccall<int>(drb, src, dst, T, shiftX, shiftY, alpha, sizeX, sizeY, flag);
+    LR2::game& game = *LR2HackBox::Get().GetGame();
+    if (!battleFixes.mIsEnabled || game.config.play.battle != 1 || battleFixes.lastLineBmstime < 0.) return battleFixes.oAddDrawingBuffer_PlayArea.ccall<int>(drb, src, dst, T, shiftX, shiftY, alpha, sizeX, sizeY, flag);
     uintptr_t returnAddress = (uintptr_t)_ReturnAddress();
     switch (returnAddress) {
     case 0x406FF6: 
@@ -124,7 +128,7 @@ void BattleFixes::OnCheckAutoadjustCondition(SafetyHookContext& regs) {
     BattleFixes& battleFixes = *(BattleFixes*)(LR2HackBox::Get().mBattleFixes.get());
     LR2::game& game = *LR2HackBox::Get().GetGame();
     GameOptions& options = *(GameOptions*)(LR2HackBox::Get().mGameOptions.get());
-    if (!battleFixes.mIsEnabled && game.config.play.battle != 1) return;
+    if (!battleFixes.mIsEnabled || game.config.play.battle != 1) return;
     if (game.config.play.autojudge && game.gameplay.autojudge_midcount > 9) {
         if (game.gameplay.autojudge_midsum > 0) game.config.play.judgetiming++;
         else if (game.gameplay.autojudge_midsum < 0) game.config.play.judgetiming--;
@@ -144,7 +148,7 @@ void BattleFixes::OnCheckAutoadjustCondition(SafetyHookContext& regs) {
 void BattleFixes::OnCheckMousewheelLanecover(SafetyHookContext& regs) {
     BattleFixes& battleFixes = *(BattleFixes*)(LR2HackBox::Get().mBattleFixes.get());
     LR2::game& game = *LR2HackBox::Get().GetGame();
-    if (!battleFixes.mIsEnabled) return;
+    if (!battleFixes.mIsEnabled || game.config.play.battle != 1) return;
     int& mouseWheel = game.KeyInput.mousewheel;
     if (game.config.play.p1_lanecover == 1) {
         if (game.KeyInput.p2_buttonInput[12] || game.KeyInput.p2_buttonInput[13]) {
