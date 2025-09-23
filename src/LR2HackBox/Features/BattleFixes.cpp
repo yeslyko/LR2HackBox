@@ -96,22 +96,28 @@ int BattleFixes::OnAddDrawingBuffer_PlayArea(LR2::DrawingBuf* drb, LR2::SRCstruc
     }
 }
 
-int BattleFixes::OnProcSinglenote(LR2::game* g, int lane, int keypress, int timing, int player) {
+void BattleFixes::OnBeginProcNote(SafetyHookContext& regs) {
+    BattleFixes& battleFixes = *(BattleFixes*)(LR2HackBox::Get().mBattleFixes.get());
+    LR2::game& game = *LR2HackBox::Get().GetGame();
+    if (!battleFixes.mIsEnabled || game.config.play.battle != 1) return;
+    battleFixes.autoadjust_lastPlayer = *(int*)(regs.esp + 0x14);
+    battleFixes.autoadjust_lastMidCount = game.gameplay.autojudge_midcount;
+    battleFixes.autoadjust_lastMidSum = game.gameplay.autojudge_midsum;    
+}
+
+void BattleFixes::OnEndProcNote(SafetyHookContext& regs) {
     BattleFixes& battleFixes = *(BattleFixes*)(LR2HackBox::Get().mBattleFixes.get());
     GameOptions& options = *(GameOptions*)(LR2HackBox::Get().mGameOptions.get());
-    if (!battleFixes.mIsEnabled) return battleFixes.oProcSinglenote.ccall<int>(g, lane, keypress, timing, player);
-    int oldMidCount = g->gameplay.autojudge_midcount;
-    int oldMidSum = g->gameplay.autojudge_midsum;
-    int retVal = battleFixes.oProcSinglenote.ccall<int>(g, lane, keypress, timing, player);
-    if (player == 1) {
-        if (oldMidCount != g->gameplay.autojudge_midcount) {
+    LR2::game& game = *LR2HackBox::Get().GetGame();
+    if (!battleFixes.mIsEnabled || game.config.play.battle != 1) return;
+    if (battleFixes.autoadjust_lastPlayer == 1) {
+        if (battleFixes.autoadjust_lastMidCount != game.gameplay.autojudge_midcount) {
             battleFixes.autoadjust_midcountP2++;
-            battleFixes.autoadjust_midsumP2 += g->gameplay.autojudge_midsum - oldMidSum;
-            g->gameplay.autojudge_midcount = oldMidCount;
-            g->gameplay.autojudge_midsum = oldMidSum;
+            battleFixes.autoadjust_midsumP2 += game.gameplay.autojudge_midsum - battleFixes.autoadjust_lastMidSum;
+            game.gameplay.autojudge_midcount = battleFixes.autoadjust_lastMidCount;
+            game.gameplay.autojudge_midsum = battleFixes.autoadjust_lastMidSum;
         }
     }
-    return retVal;
 }
 
 void BattleFixes::OnCheckAutoadjustCondition(SafetyHookContext& regs) {
@@ -152,18 +158,12 @@ void BattleFixes::OnCheckMousewheelLanecover(SafetyHookContext& regs) {
     }
 }
 
-void BattleFixes::OnGameStart(SafetyHookContext& regs) {
+void BattleFixes::OnShuffleNotesLoop(SafetyHookContext& regs) {
+    BattleFixes& battleFixes = *(BattleFixes*)(LR2HackBox::Get().mBattleFixes.get());
     LR2::game& game = *LR2HackBox::Get().GetGame();
-
-    int totalnotes[2];
-    memset(totalnotes, 0, sizeof(totalnotes));
-    for (int lane = 0; lane < 20; lane++) {
-        int laneCount = game.gameplay.bmsobj_note[lane].count;
-        int player = lane < 10 ? 0 : 1;
-        totalnotes[player] += laneCount;
-    }
-    game.gameplay.player[0].totalnotes = totalnotes[0];
-    game.gameplay.player[1].totalnotes = totalnotes[1];
+    if (!battleFixes.mIsEnabled) return;
+    unsigned int& isBattle = *(unsigned int*)(regs.esp + 0x48);
+    isBattle = 0;
 }
 
 void BattleFixes::SceneInit() {
@@ -172,6 +172,9 @@ void BattleFixes::SceneInit() {
     lastLineBmstime = -1.;
     autoadjust_midcountP2 = 0;
     autoadjust_midsumP2 = 0;
+    autoadjust_lastPlayer = 0;
+    autoadjust_lastMidCount = 0;
+    autoadjust_lastMidSum = 0;
 }
 
 static void ApplyP2ShutterFix(bool enable) {
@@ -214,12 +217,14 @@ bool BattleFixes::Init(uintptr_t moduleBase) {
     mMidHooks.push_back(safetyhook::create_mid(0x42BC62, OnSetBpmChangedBmstime));
     oAddDrawingBuffer_PlayArea = safetyhook::create_inline(0x49D630, OnAddDrawingBuffer_PlayArea);
 
-    oProcSinglenote = safetyhook::create_inline(moduleBase + 0x018850, OnProcSinglenote);
+    mMidHooks.push_back(safetyhook::create_mid(0x419320, OnBeginProcNote));
+    mMidHooks.push_back(safetyhook::create_mid(0x419410, OnEndProcNote));
+    mMidHooks.push_back(safetyhook::create_mid(0x419432, OnEndProcNote));
     mMidHooks.push_back(safetyhook::create_mid(0x42C832, OnCheckAutoadjustCondition));
 
     mMidHooks.push_back(safetyhook::create_mid(0x427779, OnCheckMousewheelLanecover));
 
-    mMidHooks.push_back(safetyhook::create_mid(0x42CD2C, OnGameStart));
+    mMidHooks.push_back(safetyhook::create_mid(0x4B4A30, OnShuffleNotesLoop));
 
     ApplyP2ShutterFix(mIsEnabled);
 

@@ -18,12 +18,13 @@ private:
 	static void OnDrawKeyLoop(SafetyHookContext& regs);
 	static void OnSetBpmChangedBmstime(SafetyHookContext& regs);
 	static int OnAddDrawingBuffer_PlayArea(LR2::DrawingBuf* drb, LR2::SRCstruct* src, LR2::DSTstruct* dst, LR2::Timer* T, float shiftX, float shiftY, int alpha, float sizeX, float sizeY, char flag);
-	static int OnProcSinglenote(LR2::game* g, int lane, int keypress, int timing, int player);
+	static void OnBeginProcNote(SafetyHookContext& regs);
+	static void OnEndProcNote(SafetyHookContext& regs);
 	static void OnCheckAutoadjustCondition(SafetyHookContext& regs);
 	static void OnCheckMousewheelLanecover(SafetyHookContext& regs);
-	static void OnGameStart(SafetyHookContext& regs);
+	static void OnShuffleNotesLoop(SafetyHookContext& regs);
 	SafetyHookInline oAddDrawingBuffer_PlayArea;
-	SafetyHookInline oProcSinglenote;
+	SafetyHookInline oProcNote;
 	std::vector<SafetyHookMid> mMidHooks;
 
 	bool mIsEnabled = false;
@@ -34,4 +35,7 @@ private:
 	int bpmChangedBmstimeP2 = -1;
 	int autoadjust_midcountP2 = 0;
 	int autoadjust_midsumP2 = 0;
+	int autoadjust_lastPlayer = 0;
+	int autoadjust_lastMidCount = 0;
+	int autoadjust_lastMidSum = 0;
 };
