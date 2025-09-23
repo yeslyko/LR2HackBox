@@ -14,6 +14,9 @@ bool GameOptions::Init(uintptr_t moduleBase) {
 	game.net.waitTime = waitTimeMs;
 	mIRWaitTime = static_cast<float>(waitTimeMs) / 1000.f;
 
+	mAdjustP2 = config.ReadValue("iGameOptionsAdjustP2", mAdjustP2);
+	mAutoadjustP2 = config.ReadValue("bGameOptionsAutoadjustP2", mAutoadjustP2);
+
 	return true;
 }
 
@@ -48,7 +51,9 @@ void GameOptions::Menu() {
 	const float MARGIN_WIDTH = ImGui::CalcTextSize("MARGIN").x;
 	const float FIRST_WIDTH = ImGui::CalcTextSize("First").x;
 	const float NEXT_WIDTH = ImGui::CalcTextSize("Next").x;
+	const float PN_WIDTH = ImGui::CalcTextSize("PN").x;
 	const float LEGEND_SPACING = 5.f * SCALE;
+	const float CHECKBOX_MAX_WIDTH = ImGui::CalcTextSize("Disable right click exit ").x + ImGui::GetStyle().FramePadding.y * 2 + ImGui::GetStyle().ItemSpacing.x * 2 + ImGui::GetStyle().ItemInnerSpacing.x * 2;
 
 	ImGui::PushItemWidth(COLUMN_WIDTH);
 
@@ -126,15 +131,36 @@ void GameOptions::Menu() {
 	ImGui::SetCursorPosX(START_X);
 	ImGui::TextUnformatted("IR wait time");
 
-	ImGui::PopItemWidth();
-	
+	ImGui::SetCursorPosX(COLUMN1_X);
+	ImGui::InputInt("##adjustp1", &game.config.play.judgetiming, 0);
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(COLUMN1_X - PN_WIDTH - LEGEND_SPACING);
+	ImGui::TextUnformatted("P1");
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(COLUMN2_X - PN_WIDTH - LEGEND_SPACING);
+	ImGui::TextUnformatted("P2");
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(COLUMN2_X);
+	if (ImGui::InputInt("##adjustp2", &mAdjustP2, 0)) {
+		config.WriteValueAndSave("iGameOptionsAdjustP2", mAdjustP2);
+	}
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(START_X);
+	ImGui::TextUnformatted("Judge Timing");
 
+	ImGui::PopItemWidth();
+
+	ImGui::Checkbox("Autoadjust P1", (bool*)&game.config.play.autojudge);
+	ImGui::SameLine(CHECKBOX_MAX_WIDTH);
+	if (ImGui::Checkbox("Autoadjust P2", &mAutoadjustP2)) {
+		config.WriteValueAndSave("bGameOptionsAutoadjustP2", mAutoadjustP2);
+	}
 	ImGui::Checkbox("PM controller", (bool*)&game.config.select.control);
 	ImGui::Checkbox("Assign 1/3 key to scroll", (bool*)&game.config.select.buttonselect);
-	ImGui::SameLine();
+	ImGui::SameLine(CHECKBOX_MAX_WIDTH);
 	ImGui::Checkbox("Disable system keys", (bool*)&game.config.system.disablesystemkey);
 	ImGui::Checkbox("Disable skin preview", (bool*)&game.config.system.disableskinpreview);
 	ImGui::Checkbox("Disable right click exit", (bool*)&game.config.play.disableleftclickexit);
-	ImGui::SameLine();
+	ImGui::SameLine(CHECKBOX_MAX_WIDTH);
 	ImGui::Checkbox("Assign up/down key to hs change", (bool*)&game.config.play.disablecurspeedchange);
 }

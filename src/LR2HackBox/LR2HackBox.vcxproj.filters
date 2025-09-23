@@ -54,6 +54,9 @@
     <ClInclude Include="Features\JudgeLimiter.hpp">
       <Filter>Header Files\Features</Filter>
     </ClInclude>
+    <ClInclude Include="Features\BattleFixes.hpp">
+      <Filter>Header Files\Features</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LR2HackBox.cpp">
@@ -90,6 +93,9 @@
       <Filter>Source Files\Features</Filter>
     </ClCompile>
     <ClCompile Include="Features\JudgeLimiter.cpp">
+      <Filter>Source Files\Features</Filter>
+    </ClCompile>
+    <ClCompile Include="Features\BattleFixes.cpp">
       <Filter>Source Files\Features</Filter>
     </ClCompile>
   </ItemGroup>

@@ -120,4 +120,5 @@ private:
 	bool mIsSkipResultSub = false;
 	bool mIsResultQuickIR = false;
 	bool mIsRivalLeaderboard = false;
+	bool mIsBattleFixes = false;
 };

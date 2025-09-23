@@ -15,6 +15,7 @@
 #include "Numbers.hpp"
 #include "ScoreCannon.hpp"
 #include "RivalLeaderboard.hpp"
+#include "BattleFixes.hpp"
 
 #include "ImGuiInjector/ImGuiInjector.hpp"
 #include <safetyhook.hpp>
@@ -269,8 +270,10 @@ void Misc::OnDecideInit() {
 void Misc::OnPlayInit() {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers.get());
+	BattleFixes& battleFixes = *(BattleFixes*)(LR2HackBox::Get().mBattleFixes.get());
 
 	numbers.SceneInit();
+	battleFixes.SceneInit();
 
 	mOrigGaugeType = game.config.play.gaugeOption[0];
 	mCurrentDrawingLNObj = nullptr;
@@ -1281,6 +1284,14 @@ void Misc::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("While viewing global leaderboard holding 4, you can switch the leaderboard to display your rivals by holding 'SELECT'. Pressing 'SELECT' again switches it back. Uses cached data from 'LR2files/Rival' directory");
+
+	BattleFixes& battleFixes = *(BattleFixes*)LR2HackBox::Get().mBattleFixes.get();
+	mIsBattleFixes = battleFixes.GetEnabled();
+	if (ImGui::Checkbox("Battle Fixes", &mIsBattleFixes)) {
+		battleFixes.SetEnabled(mIsBattleFixes);
+	}
+	ImGui::SameLine();
+	HelpMarker("Implements multiple fixes to make battle mode properly playable:\n\n Separate adjust value for P1 and P2, as well as autoadjust. See 'Game Options' section to change P2 values.\n\n Margin lanecover shift uninverted for P2 (black - up, white - down). P2 lanecover can be adjusted with mousewheel (or start+scratch on djdao controllers in LR2 mode) while holding P2 start/select.\n\n Fixes a bug where P1 side would get early game end animation, when P1 and P2 random types are different.");
 
 	if (ImGui::Checkbox("Analog scratch support", &mIsAnalogInput)) {
 		config.WriteValueAndSave("bAnalogInput", mIsAnalogInput);

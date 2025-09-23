@@ -140,11 +140,11 @@ void Numbers::OnProcSNOrLNFork(SafetyHookContext& regs) {
 	int player = *(int*)(regs.esp + 0x20);
 
 	if (game.gameplay.replay.status == 2) return;
-	if (player != 0) return;
+	if (!numbers.mIsBattle && player != 0) return;
 
 
 	LR2::NoteStruct* note = &game.gameplay.bmsobj_note[lane].notes[game.gameplay.bmsobj_note[lane].note_count];
-
+	
 	bool isLN = note->realTiming < note->realTiming_ln;
 	if (!isLN) {
 		CalcJudgementSN(lane, keypress, timing, player, note);
@@ -154,7 +154,7 @@ void Numbers::OnProcSNOrLNFork(SafetyHookContext& regs) {
 	}
 }
 
-static int* SetGuiMapping(int* arr, int keymode, bool P2) {
+static int* SetGuiMapping(int* arr, int keymode, bool P2, bool battle) {
 	constexpr int mapping5KP1[] = { 0, 1, 2, 3, 4, 5 };
 	constexpr int mapping5KP2[] = { 1, 2, 3, 4, 5, 0 };
 	constexpr int mapping7KP1[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
@@ -164,11 +164,13 @@ static int* SetGuiMapping(int* arr, int keymode, bool P2) {
 	constexpr int mapping14K[] = { 0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 10 };
 	switch (keymode) {
 	case 5:
-		if (!P2) memcpy(arr, mapping5KP1, sizeof(mapping5KP1));
+		if (battle) memcpy(arr, mapping10K, sizeof(mapping10K));
+		else if (!P2) memcpy(arr, mapping5KP1, sizeof(mapping5KP1));
 		else memcpy(arr, mapping5KP2, sizeof(mapping5KP2));
 		return arr;
 	case 7:
-		if (!P2) memcpy(arr, mapping7KP1, sizeof(mapping7KP1));
+		if (battle) memcpy(arr, mapping14K, sizeof(mapping14K));
+		else if (!P2) memcpy(arr, mapping7KP1, sizeof(mapping7KP1));
 		else memcpy(arr, mapping7KP2, sizeof(mapping7KP2));
 		return arr;
 	case 9:
@@ -189,13 +191,15 @@ void Numbers::SceneInit() {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 
 	mKeymode = game.sSelect.metaSelected.keymode;
+	mIsBattle = (mKeymode < 10 && game.config.play.battle == 1);
 	mKeycount = mKeymode < 10 ? (mKeymode == 9 ? 9 : mKeymode + 1) : mKeymode + 2;
+	if (mIsBattle && mKeycount < 10) mKeycount *= 2;
 
 	mJudgeCountColumns.fill(JudgeCounter());
 
 	mGuiMapping.clear();
 	mGuiMapping.resize(mKeycount);
-	SetGuiMapping(mGuiMapping.data(), mKeymode, mIsP2Flip);
+	SetGuiMapping(mGuiMapping.data(), mKeymode, mIsP2Flip, mIsBattle);
 }
 
 bool Numbers::Init(uintptr_t moduleBase) {
@@ -203,7 +207,7 @@ bool Numbers::Init(uintptr_t moduleBase) {
 
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 	mIsP2Flip = config.ReadValue("bColumnStatsP2", mIsP2Flip);
-	SetGuiMapping(mGuiMapping.data(), mKeymode, mIsP2Flip);
+	SetGuiMapping(mGuiMapping.data(), mKeymode, mIsP2Flip, mIsBattle);
 
 	ImGuiInjector::Get().AddMenu(&mColumnStatsMenu);
 
@@ -297,7 +301,7 @@ void Numbers::Menu() {
 		ImGui::SameLine();
 		HelpMarker(columnStatsHelp);
 		if (ImGui::Checkbox("P2 Scratch Side", &mIsP2Flip)) {
-			SetGuiMapping(mGuiMapping.data(), mKeymode, mIsP2Flip);
+			SetGuiMapping(mGuiMapping.data(), mKeymode, mIsP2Flip, mIsBattle);
 			config.WriteValueAndSave("bColumnStatsP2", mIsP2Flip);
 		}
 		ImGui::SameLine();

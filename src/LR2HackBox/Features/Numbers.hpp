@@ -47,6 +47,7 @@ private:
 
 	int mKeymode = 7;
 	int mKeycount = 8;
+	bool mIsBattle = false;
 	bool mIsP2Flip = false;
 	bool mIsWindow = false;
 	::ColumnStatsMenu mColumnStatsMenu;

@@ -23,6 +23,7 @@
 #include "Features/ScoreCannon.hpp"
 #include "Features/RivalLeaderboard.hpp"
 #include "Features/JudgeLimiter.hpp"
+#include "Features/BattleFixes.hpp"
 
 #pragma comment(lib, "Helpers.lib")
 #pragma comment(lib, "ImGuiInjector.lib")
@@ -68,6 +69,7 @@ bool LR2HackBox::EarlyHook() {
 	mScoreCannon.reset(new ScoreCannon());
 	mRivalLeaderboard.reset(new RivalLeaderboard());
 	mJudgeLimiter.reset(new JudgeLimiter());
+	mBattleFixes.reset(new BattleFixes());
 
 	mUnrandomizer->EarlyInit(mModuleBase);
 	mFunny->EarlyInit(mModuleBase);
@@ -78,6 +80,7 @@ bool LR2HackBox::EarlyHook() {
 	mScoreCannon->EarlyInit(mModuleBase);
 	mRivalLeaderboard->EarlyInit(mModuleBase);
 	mJudgeLimiter->EarlyInit(mModuleBase);
+	mBattleFixes->EarlyInit(mModuleBase);
 
 	return true;
 }
@@ -102,6 +105,7 @@ bool LR2HackBox::Hook() {
 	mScoreCannon->Init(mModuleBase);
 	mRivalLeaderboard->Init(mModuleBase);
 	mJudgeLimiter->Init(mModuleBase);
+	mBattleFixes->Init(mModuleBase);
 
 	return true;
 }
@@ -116,6 +120,7 @@ bool LR2HackBox::Unhook() {
 	mScoreCannon->Deinit();
 	mRivalLeaderboard->Deinit();
 	mJudgeLimiter->Deinit();
+	mBattleFixes->Deinit();
 	return true;
 }
 

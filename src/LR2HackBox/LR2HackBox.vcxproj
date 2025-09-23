@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Features\AnalogInput.cpp" />
+    <ClCompile Include="Features\BattleFixes.cpp" />
     <ClCompile Include="Features\Funny.cpp" />
     <ClCompile Include="Features\GameOptions.cpp" />
     <ClCompile Include="Features\JudgeLimiter.cpp" />
@@ -32,6 +33,7 @@
     <ClCompile Include="Features\Version.cpp" />
     <ClCompile Include="LR2HackBox.cpp" />
     <ClInclude Include="Features\AnalogInput.hpp" />
+    <ClInclude Include="Features\BattleFixes.hpp" />
     <ClInclude Include="Features\Funny.hpp" />
     <ClInclude Include="Features\GameOptions.hpp" />
     <ClInclude Include="Features\JudgeLimiter.hpp" />

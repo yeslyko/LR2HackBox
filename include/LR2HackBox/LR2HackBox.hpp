@@ -75,6 +75,7 @@ public:
 	std::unique_ptr<ModFeature> mScoreCannon;
 	std::unique_ptr<ModFeature> mRivalLeaderboard;
 	std::unique_ptr<ModFeature> mJudgeLimiter;
+	std::unique_ptr<ModFeature> mBattleFixes;
 
 	std::unique_ptr<ConfigManager> mConfig;
 
