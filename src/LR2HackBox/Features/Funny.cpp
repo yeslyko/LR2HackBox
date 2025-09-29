@@ -56,12 +56,22 @@ void Funny::OnEndParseBmsFile(SafetyHookContext& regs) {
 		i++;
 	}
 
-	for (int laneIdx = 0; laneIdx < 20; laneIdx++) {
-		LR2::LaneStruct& lane = gameplay.bmsobj_note[laneIdx];
-		if (lane.count == 0) continue;
-		for (int noteIdx = 0; noteIdx < lane.count; noteIdx++) {
-			LR2::NoteStruct& note = lane.notes[noteIdx];
-			note.val = randomKeysoundsMapping[note.val];
+	if (gameplay.isAutoplay) {
+		for (int noteIdx = 0; noteIdx < gameplay.bmsobj.count; noteIdx++) {
+			LR2::NoteStruct& note = gameplay.bmsobj.notes[noteIdx];
+			if (randomKeysoundsMapping.contains(note.val)) {
+				note.val = randomKeysoundsMapping[note.val];
+			}
+		}
+	}
+	else {
+		for (int laneIdx = 0; laneIdx < 20; laneIdx++) {
+			LR2::LaneStruct& lane = gameplay.bmsobj_note[laneIdx];
+			if (lane.count == 0) continue;
+			for (int noteIdx = 0; noteIdx < lane.count; noteIdx++) {
+				LR2::NoteStruct& note = lane.notes[noteIdx];
+				note.val = randomKeysoundsMapping[note.val];
+			}
 		}
 	}
 }
