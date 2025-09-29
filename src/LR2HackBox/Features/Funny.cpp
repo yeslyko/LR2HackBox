@@ -126,5 +126,5 @@ void Funny::Menu() {
 
 	ImGui::Checkbox("Shuffle Keysounds", &mIsShuffleKeysounds);
 	ImGui::SameLine();
-	HelpMarker("Randomly shuffles keysounds of a chart. Makes predictable result combined with unrandomizer. Doesn't work in autoplay");
+	HelpMarker("Randomly shuffles keysounds of a chart. Makes predictable result combined with unrandomizer");
 }
