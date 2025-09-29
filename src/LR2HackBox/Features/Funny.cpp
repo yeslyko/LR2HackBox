@@ -1,8 +1,8 @@
 #include "Funny.hpp"
 
-#include <iostream>
 #include "LR2HackBox/LR2HackBox.hpp"
 #include "Misc.hpp"
+#include <random>
 
 #include <safetyhook.hpp>
 #include "imgui/imgui.h"
@@ -31,6 +31,41 @@ int Funny::OnProcSinglenote(void* g, int lane, int keypress, int timing, int pla
 	return result;
 }
 
+void Funny::OnEndParseBmsFile(SafetyHookContext& regs) {
+	Funny& funny = *(Funny*)(LR2HackBox::Get().mFunny.get());
+	if (!funny.mIsShuffleKeysounds) return;
+
+	LR2::gameplay& gameplay = LR2HackBox::Get().GetGame()->gameplay;
+	std::unordered_map<double, double> randomKeysoundsMapping;
+	std::vector<double> shuffledKeysounds;
+	for (int laneIdx = 0; laneIdx < 20; laneIdx++) {
+		LR2::LaneStruct& lane = gameplay.bmsobj_note[laneIdx];
+		if (lane.count == 0) continue;
+		for (int noteIdx = 0; noteIdx < lane.count; noteIdx++) {
+			if (randomKeysoundsMapping.contains(lane.notes[noteIdx].val)) continue;
+			randomKeysoundsMapping[lane.notes[noteIdx].val] = 0;
+			shuffledKeysounds.push_back(lane.notes[noteIdx].val);
+		}
+	}
+
+	std::mt19937 g(gameplay.randomseed);
+	std::shuffle(shuffledKeysounds.begin(), shuffledKeysounds.end(), g);
+	int i = 0;
+	for (auto& it : randomKeysoundsMapping) {
+		it.second = shuffledKeysounds[i];
+		i++;
+	}
+
+	for (int laneIdx = 0; laneIdx < 20; laneIdx++) {
+		LR2::LaneStruct& lane = gameplay.bmsobj_note[laneIdx];
+		if (lane.count == 0) continue;
+		for (int noteIdx = 0; noteIdx < lane.count; noteIdx++) {
+			LR2::NoteStruct& note = lane.notes[noteIdx];
+			note.val = randomKeysoundsMapping[note.val];
+		}
+	}
+}
+
 bool Funny::Init(uintptr_t moduleBase) {
 	Funny::mModuleBase = moduleBase;
 
@@ -39,7 +74,10 @@ bool Funny::Init(uintptr_t moduleBase) {
 	FMOD_Channel_SetPan = (decltype(FMOD_Channel_SetPan))GetProcAddress(fmodModule, "FMOD_Channel_SetPan");
 
 	mMidHooks.push_back(safetyhook::create_mid((void*)(moduleBase + 0x7098), OnDrawNote));
+#ifdef NDEBUG
 	oProcSinglenote = safetyhook::create_inline(moduleBase + 0x018850, OnProcSinglenote);
+#endif
+	mMidHooks.push_back(safetyhook::create_mid(moduleBase + 0x0B64D9, OnEndParseBmsFile));
 
 	return true;
 }
@@ -75,4 +113,8 @@ void Funny::Menu() {
 	ImGui::Checkbox("Spatial Keysounds", &mIsSpatialKeysounds);
 	ImGui::SameLine();
 	HelpMarker("Left ear, right ear, left ear, middle, left ear, right ear");
+
+	ImGui::Checkbox("Shuffle Keysounds", &mIsShuffleKeysounds);
+	ImGui::SameLine();
+	HelpMarker("Randomly shuffles keysounds of a chart. Makes predictable result combined with unrandomizer. Doesn't work in autoplay");
 }

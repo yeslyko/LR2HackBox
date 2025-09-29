@@ -1,6 +1,7 @@
 #include "BaseModels/ModFeature.hpp"
 
 #include <safetyhook.hpp>
+#include <LR2Mem/LR2Typedefs.hpp>
 
 #include <stdint.h>
 class Funny : public ModFeature {
@@ -13,6 +14,7 @@ public:
 private:
 	static void OnDrawNote(SafetyHookContext& regs);
 	static int OnProcSinglenote(void* g, int lane, int keypress, int timing, int player);
+	static void OnEndParseBmsFile(SafetyHookContext& regs);
 	safetyhook::InlineHook oProcSinglenote;
 
 	int(__stdcall* FMOD_Channel_GetPan)(void*, float*) = nullptr;
@@ -23,4 +25,5 @@ private:
 	bool mIsInvisibleScratch = false;
 	bool mIsMetronome = false;
 	bool mIsSpatialKeysounds = false;
+	bool mIsShuffleKeysounds = false;
 };
