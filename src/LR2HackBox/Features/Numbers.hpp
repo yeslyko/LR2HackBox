@@ -23,27 +23,34 @@ public:
 	void SetOpenColumnStatsMenu(bool value);
 	void ToggleColumnStatsMenu();
 
-private:
 #pragma pack(push, 1)
-	struct JudgeCounter {
-		int pgreat = 0;
-		int great = 0;
-		int good = 0;
-		int bad = 0;
-		int poor = 0;
-		int epoor = 0;
-		int fast = 0;
-		int slow = 0;
-		int cb = 0;
-		int noteCount = 0;
+	struct Judgements {
+		unsigned int epg = 0;
+		unsigned int lpg = 0;
+		unsigned int egr = 0;
+		unsigned int lgr = 0;
+		unsigned int egd = 0;
+		unsigned int lgd = 0;
+		unsigned int ebd = 0;
+		unsigned int lbd = 0;
+		unsigned int epr = 0;
+		unsigned int lpr = 0;
+		unsigned int cb = 0;
+		unsigned int fast = 0;
+		unsigned int slow = 0;
+		unsigned int noteCount = 0;
 	};
 #pragma pack(pop)
-	std::array<JudgeCounter, 20> mJudgeCountColumns = {};
+	Judgements GetTotalJudgements();
+
+private:
+	std::array<Judgements, 20> mJudgeCountColumns = {};
 	std::vector<int> mGuiMapping = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
 	static void CalcJudgementSN(int lane, int keypress, int timing, int player, void* note, int multibadIndent = 1);
 	static void CalcJudgementLN(int lane, int keypress, int timing, int player, void* note);
 	static void OnProcSNOrLNFork(SafetyHookContext& regs);
+	std::array<bool, 20> mLastLNFast = {};
 
 	int mKeymode = 7;
 	int mKeycount = 8;

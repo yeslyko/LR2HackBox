@@ -8,19 +8,31 @@
 #include <safetyhook.hpp>
 #include "imgui/imgui.h"
 
+Numbers::Judgements Numbers::GetTotalJudgements() {
+	Judgements total;
+	for (int columnIdx = 0; columnIdx < mKeycount; columnIdx++) {
+		Judgements& column = mJudgeCountColumns[mGuiMapping[columnIdx]];
+		constexpr const unsigned int dataCount = sizeof(Judgements) / sizeof(unsigned int);
+		for (int dataIdx = 0; dataIdx < dataCount; dataIdx++) {
+			((unsigned int*)&total)[dataIdx] += ((unsigned int*)&column)[dataIdx];
+		}
+	}
+	return total;
+}
+
 void Numbers::CalcJudgementSN(int lane, int keypress, int timing, int player, void* noteIn, int multibadIndent) {
 	LR2::NoteStruct& note = *(LR2::NoteStruct*)noteIn;
 
 	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers.get());
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 
-	JudgeCounter& counter = numbers.mJudgeCountColumns[lane];
+	Judgements& counter = numbers.mJudgeCountColumns[lane];
 
 	if (note.mine > 0) return;
 	if (game.gameplay.player[player].note_current >= game.gameplay.player[player].totalnotes) return;
 
 	if ((double)timing - note.realTiming > (double)game.gameplay.player[player].judgetime[2]) {
-		counter.poor++;
+		counter.lpr++;
 		counter.cb++;
 		counter.noteCount++;
 		return;
@@ -33,31 +45,31 @@ void Numbers::CalcJudgementSN(int lane, int keypress, int timing, int player, vo
 	bool isFast = offset < 0;
 
 	if (gap <= game.gameplay.player[player].judgetime[5]) {
-		counter.pgreat++;
+		isFast ? counter.epg++ : counter.lpg++;
 		counter.noteCount++;
 	}
 	else if (gap <= game.gameplay.player[player].judgetime[4]) {
-		counter.great++;
-		counter.noteCount++;
+		isFast ? counter.egr++ : counter.lgr++;
 		isFast ? counter.fast++ : counter.slow++;
+		counter.noteCount++;
 	}
 	else if (gap <= game.gameplay.player[player].judgetime[3]) {
-		counter.good++;
-		counter.noteCount++;
+		isFast ? counter.egd++ : counter.lgd++;
 		isFast ? counter.fast++ : counter.slow++;
+		counter.noteCount++;
 	}
 	else if (gap <= game.gameplay.player[player].judgetime[2]) {
-		counter.bad++;
+		isFast ? counter.ebd++ : counter.lbd++;
+		isFast ? counter.fast++ : counter.slow++;
 		counter.cb++;
 		counter.noteCount++;
-		isFast ? counter.fast++ : counter.slow++;
 		LR2::NoteStruct* nextNote = game.gameplay.bmsobj_note[lane].note_count + multibadIndent < game.gameplay.bmsobj_note[lane].size ? &game.gameplay.bmsobj_note[lane].notes[game.gameplay.bmsobj_note[lane].note_count + multibadIndent] : nullptr;
 		if (nextNote != nullptr && std::abs(timing - (int)nextNote->realTiming) <= game.gameplay.player[player].judgetime[2]) {
 			CalcJudgementSN(lane, keypress, timing, player, nextNote, multibadIndent + 1);
 		}
 	}
 	else if ((int)note.realTiming - timing < game.gameplay.player[player].judgetime[1]) {
-		counter.epoor++;
+		counter.epr++;
 	}
 }
 
@@ -67,12 +79,12 @@ void Numbers::CalcJudgementLN(int lane, int keypress, int timing, int player, vo
 	Numbers& numbers = *(Numbers*)(LR2HackBox::Get().mNumbers.get());
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 
-	JudgeCounter& counter = numbers.mJudgeCountColumns[lane];
+	Judgements& counter = numbers.mJudgeCountColumns[lane];
 
 	if (game.gameplay.player[player].note_current >= game.gameplay.player[player].totalnotes) return;
 
 	if ((double)timing - note.realTiming > (double)game.gameplay.player[player].judgetime[3] && note.active <= 0) {
-		counter.poor++;
+		counter.lpr++;
 		counter.cb++;
 		counter.noteCount++;
 		return;
@@ -84,45 +96,50 @@ void Numbers::CalcJudgementLN(int lane, int keypress, int timing, int player, vo
 		bool isFast = offset < 0;
 
 		if (gap <= game.gameplay.player[player].judgetime[5]) {
-
+			numbers.mLastLNFast[lane] = isFast;
 		}
 		else if (gap <= game.gameplay.player[player].judgetime[4]) {
+			numbers.mLastLNFast[lane] = isFast;
 			isFast ? counter.fast++ : counter.slow++;
 		}
 		else if (gap <= game.gameplay.player[player].judgetime[3]) {
+			numbers.mLastLNFast[lane] = isFast;
 			isFast ? counter.fast++ : counter.slow++;
 		}
 		else if (gap <= game.gameplay.player[player].judgetime[2]) {
+			numbers.mLastLNFast[lane] = isFast;
 			isFast ? counter.fast++ : counter.slow++;
 		}
 		else if ((int)note.realTiming - timing < game.gameplay.player[player].judgetime[1]) {
-			counter.epoor++;
+			counter.epr++;
 		}
 		return;
 	}
 	else if (keypress == 2) {
+		bool isFast = numbers.mLastLNFast[lane];
 		if ((int)note.realTiming_ln < timing && note.active > 0) {
 			switch (note.active) {
-			case 5: counter.pgreat++; break;
-			case 4: counter.great++; break;
-			case 3: counter.good++; break;
-			case 2: counter.bad++; counter.cb++; break;
+			case 5: isFast ? counter.epg++ : counter.lpg++; break;
+			case 4: isFast ? counter.egr++ : counter.lgr++; break;
+			case 3: isFast ? counter.egd++ : counter.lgd++; break;
+			case 2: isFast ? counter.ebd++ : counter.lbd++; counter.cb++; break;
 			}
 			counter.noteCount++;
 		}
 		return;
 	}
 	else if (keypress == 3 && note.active > 0) {
+		bool isFast = numbers.mLastLNFast[lane];
 		if (game.gameplay.player[player].judgetime[3] + timing < (int)note.realTiming_ln) {
-			counter.bad++;
+			isFast ? counter.ebd++ : counter.lbd++;
 			counter.cb++;
 		}
 		else {
 			switch (note.active) {
-			case 5: counter.pgreat++; break;
-			case 4: counter.great++; break;
-			case 3: counter.good++; break;
-			case 2: counter.bad++; counter.cb++; break;
+			case 5: isFast ? counter.epg++ : counter.lpg++; break;
+			case 4: isFast ? counter.egr++ : counter.lgr++; break;
+			case 3: isFast ? counter.egd++ : counter.lgd++; break;
+			case 2: isFast ? counter.ebd++ : counter.lbd++; counter.cb++; break;
 			}
 		}
 		counter.noteCount++;
@@ -195,7 +212,8 @@ void Numbers::SceneInit() {
 	mKeycount = mKeymode < 10 ? (mKeymode == 9 ? 9 : mKeymode + 1) : mKeymode + 2;
 	if (mIsBattle && mKeycount < 10) mKeycount *= 2;
 
-	mJudgeCountColumns.fill(JudgeCounter());
+	mJudgeCountColumns.fill(Judgements());
+	mLastLNFast.fill(false);
 
 	mGuiMapping.clear();
 	mGuiMapping.resize(mKeycount);
@@ -243,7 +261,7 @@ void Numbers::ColumnStatsMenu() {
 	const float rowHeight = ImGui::GetItemRectSize().y + paddingHeight;
 	ImGui::SetCursorPos(oldCursorPos);
 	const float scrollHeight = 14.f * scale;
-	constexpr const int judgeRowCount = sizeof(JudgeCounter) / sizeof(int);
+	constexpr const int judgeRowCount = 10;
 	constexpr const char* notations[] = { "PGREAT:", " GREAT:", "  GOOD:", "   BAD:", "  POOR:", "E.POOR:", "  FAST:", "  SLOW:", "    CB:", "   EX%:"};
 	static_assert(std::size(notations) == judgeRowCount);
 	ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg;
@@ -253,41 +271,60 @@ void Numbers::ColumnStatsMenu() {
 			std::string columnName = "Column##" + (columnIdx + 1);
 			ImGui::TableSetupColumn(columnName.c_str(), ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("100.00").x);
 		}
-		JudgeCounter total;
+		Judgements total = GetTotalJudgements();
 		for (int rowIdx = 0; rowIdx < judgeRowCount; rowIdx++) {
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::TextUnformatted(notations[rowIdx]);
-			for (int columnIdx = 0; columnIdx < mKeycount; columnIdx++) {
+			for (int columnIdx = 0; columnIdx < mKeycount + 1; columnIdx++) {
+				Judgements& judgements = columnIdx == mKeycount ? total : mJudgeCountColumns[mGuiMapping[columnIdx]];
 				ImGui::TableSetColumnIndex(columnIdx + 1);
-				JudgeCounter& column = mJudgeCountColumns[mGuiMapping[columnIdx]];
-				if (mGuiMapping[columnIdx] == 0 || mGuiMapping[columnIdx] == 10) {
-					ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(189, 0, 0, 100));
-				}
-				else {
-					if (mGuiMapping[columnIdx] % 2 == 0) {
-						ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(0, 0, 139, 100));
+				if (columnIdx < mKeycount) {
+					if (mGuiMapping[columnIdx] == 0 || mGuiMapping[columnIdx] == 10) {
+						ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(189, 0, 0, 100));
 					}
 					else {
-						ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(230, 230, 230, 100));
+						if (mGuiMapping[columnIdx] % 2 == 0) {
+							ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(0, 0, 139, 100));
+						}
+						else {
+							ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, IM_COL32(230, 230, 230, 100));
+						}
 					}
 				}
-				if (rowIdx != judgeRowCount - 1) {
-					ImGui::Text("%d", ((int*)&column)[rowIdx]);
-				}
-				else {
-					if (column.noteCount) ImGui::Text("%.2f", static_cast<float>(column.pgreat * 2 + column.great) / (column.noteCount * 2) * 100.f);
+				switch (rowIdx) {
+				case 0:
+					ImGui::Text("%d", judgements.epg + judgements.lpg);
+					break;
+				case 1:
+					ImGui::Text("%d", judgements.egr + judgements.lgr);
+					break;
+				case 2:
+					ImGui::Text("%d", judgements.egd + judgements.lgd);
+					break;
+				case 3:
+					ImGui::Text("%d", judgements.ebd + judgements.lbd);
+					break;
+				case 4:
+					ImGui::Text("%d", judgements.lpr);
+					break;
+				case 5:
+					ImGui::Text("%d", judgements.epr);
+					break;
+				case 6:
+					ImGui::Text("%d", judgements.fast);
+					break;
+				case 7:
+					ImGui::Text("%d", judgements.slow);
+					break;
+				case 8:
+					ImGui::Text("%d", judgements.cb);
+					break;
+				case 9:
+					if (judgements.noteCount) ImGui::Text("%.2f", static_cast<float>((judgements.epg + judgements.lpg) * 2 + judgements.egr + judgements.lgr) / (judgements.noteCount * 2) * 100.f);
 					else ImGui::Text("%.2f", 100.f);
+					break;
 				}
-				((int*)&total)[rowIdx] += ((int*)&column)[rowIdx];
-			}
-			ImGui::TableSetColumnIndex(ImGui::TableGetColumnCount() - 1);
-			if (rowIdx != judgeRowCount - 1) {
-				ImGui::Text("%d", ((int*)&total)[rowIdx]);
-			}
-			else {
-				if (total.noteCount) ImGui::Text("%.2f", static_cast<float>(total.pgreat * 2 + total.great) / (total.noteCount * 2) * 100.f);
-				else ImGui::Text("%.2f", 100.f);
 			}
 		}
 		ImGui::EndTable();
