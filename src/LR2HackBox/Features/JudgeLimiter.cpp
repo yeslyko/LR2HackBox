@@ -62,7 +62,7 @@ static void HelpMarker(const char* desc) {
 void JudgeLimiter::Menu() {
     ConfigManager &config = *LR2HackBox::Get().mConfig;
 
-    if (ImGui::Checkbox("Enable", &mIsEnabled));
+    ImGui::Checkbox("Enable", &mIsEnabled);
     ImGui::SameLine();
     HelpMarker("When enabled, if the set stat conditions can no longer be met during gameplay, the play will restart automatically. Set value to -1 to ignore a condition.");
 
