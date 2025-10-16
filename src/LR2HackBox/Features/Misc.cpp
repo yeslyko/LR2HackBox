@@ -238,6 +238,8 @@ static void FillBMSMETA(LR2::BMSMETA& meta, const LR2::SONGDATA& song) {
 
 void Misc::CustomSelect() {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
+	game.gameplay.replay.status = 0;
+	game.gameplay.isAutoplay = 0;
 
 	std::string querry;
 	if (std::string_view(game.sSelect.bmsList[game.sSelect.cur_song].tag.body).size() <= sizeof("NOTAFOLDER")) {
