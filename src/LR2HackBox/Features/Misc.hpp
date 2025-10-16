@@ -102,6 +102,8 @@ private:
 
 	static void OnIrSendSuccess(SafetyHookContext& regs);
 
+	static void OnGhostDecodeAdd(SafetyHookContext& regs);
+
 	std::vector<SafetyHookMid> mMidHooks;
 
 	bool mIsRetryTweaks = false;
@@ -121,4 +123,5 @@ private:
 	bool mIsResultQuickIR = false;
 	bool mIsRivalLeaderboard = false;
 	bool mIsBattleFixes = false;
+	bool mIsGhostFix = false;
 };

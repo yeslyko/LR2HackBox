@@ -940,6 +940,14 @@ void Misc::OnIrSendSuccess(SafetyHookContext& regs) {
 	}
 }
 
+void Misc::OnGhostDecodeAdd(SafetyHookContext& regs) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+	if (!misc.mIsGhostFix) return;
+	
+	auto& rep = regs.esi;
+	if (rep == 0) rep = 1;
+}
+
 bool Misc::EarlyInit(uintptr_t moduleBase) {
 	Misc::mModuleBase = moduleBase;
 
@@ -982,6 +990,7 @@ void Misc::LoadConfig() {
 	mIsSkipResultWaitIR = config.ReadValue("bSkipResultWaitIR", mIsSkipResultWaitIR);
 	mIsSkipResultSub = config.ReadValue("bSkipResultSub", mIsSkipResultSub);
 	mIsResultQuickIR = config.ReadValue("bResultQuickIR", mIsResultQuickIR);
+	mIsGhostFix = config.ReadValue("bGhostFix", mIsGhostFix);
 	mAutoadjustClampMin = config.ReadValue("iAutoadjustClampMin", mAutoadjustClampMin);
 	mAutoadjustClampMax = config.ReadValue("iAutoadjustClampMax", mAutoadjustClampMax);
 
@@ -1020,6 +1029,8 @@ void Misc::SetHooks() {
 	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x03E4F8, OnWriteConfigXml));
 
 	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x0BC8FF, OnIrSendSuccess));
+
+	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x0A9C23, OnGhostDecodeAdd));
 
 	if (MH_CreateHookEx((LPVOID)SaveDrawScreenToPNG, &OnSaveDrawScreenToPNG, &SaveDrawScreenToPNG) != MH_OK)
 	{
@@ -1294,6 +1305,12 @@ void Misc::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("Implements multiple fixes to make battle mode properly playable:\n\n Separate adjust value for P1 and P2, as well as autoadjust. See 'Game Options' section to change P2 values.\n\n Margin lanecover shift uninverted for P2 (black - up, white - down). P2 lanecover can be adjusted with mousewheel (or start+scratch on djdao controllers in LR2 mode) while holding P2 start/select.\n\n Fixes a bug where P1 side would get early game end animation, when P1 and P2 random types are different.");
+
+	if (ImGui::Checkbox("Ghost Fix", &mIsGhostFix)) {
+		config.WriteValueAndSave("bGhostFix", mIsGhostFix);
+	}
+	ImGui::SameLine();
+	HelpMarker("Fixes a bug where last note of a ghost would sometimes get incorrect judgement, resulting in wrong score.");
 
 	if (ImGui::Checkbox("Analog scratch support", &mIsAnalogInput)) {
 		config.WriteValueAndSave("bAnalogInput", mIsAnalogInput);
