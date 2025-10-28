@@ -29,6 +29,7 @@
     <ClCompile Include="Features\Numbers.cpp" />
     <ClCompile Include="Features\RivalLeaderboard.cpp" />
     <ClCompile Include="Features\ScoreCannon.cpp" />
+    <ClCompile Include="Features\TableManager.cpp" />
     <ClCompile Include="Features\Unrandomizer.cpp" />
     <ClCompile Include="Features\Version.cpp" />
     <ClCompile Include="LR2HackBox.cpp" />
@@ -42,6 +43,7 @@
     <ClInclude Include="Features\Numbers.hpp" />
     <ClInclude Include="Features\RivalLeaderboard.hpp" />
     <ClInclude Include="Features\ScoreCannon.hpp" />
+    <ClInclude Include="Features\TableManager.hpp" />
     <ClInclude Include="Features\Unrandomizer.hpp" />
     <ClInclude Include="Features\Unrandomizer_SeedMap7K.hpp" />
     <ClInclude Include="Features\Unrandomizer_SeedMap5K.hpp" />

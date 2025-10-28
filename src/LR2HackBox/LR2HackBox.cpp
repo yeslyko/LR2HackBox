@@ -24,6 +24,7 @@
 #include "Features/RivalLeaderboard.hpp"
 #include "Features/JudgeLimiter.hpp"
 #include "Features/BattleFixes.hpp"
+#include "Features/TableManager.hpp"
 
 #pragma comment(lib, "Helpers.lib")
 #pragma comment(lib, "ImGuiInjector.lib")
@@ -70,6 +71,7 @@ bool LR2HackBox::EarlyHook() {
 	mRivalLeaderboard.reset(new RivalLeaderboard());
 	mJudgeLimiter.reset(new JudgeLimiter());
 	mBattleFixes.reset(new BattleFixes());
+	mTableManager.reset(new TableManager());
 
 	mUnrandomizer->EarlyInit(mModuleBase);
 	mFunny->EarlyInit(mModuleBase);
@@ -81,6 +83,7 @@ bool LR2HackBox::EarlyHook() {
 	mRivalLeaderboard->EarlyInit(mModuleBase);
 	mJudgeLimiter->EarlyInit(mModuleBase);
 	mBattleFixes->EarlyInit(mModuleBase);
+	mTableManager->EarlyInit(mModuleBase);
 
 	return true;
 }
@@ -106,6 +109,7 @@ bool LR2HackBox::Hook() {
 	mRivalLeaderboard->Init(mModuleBase);
 	mJudgeLimiter->Init(mModuleBase);
 	mBattleFixes->Init(mModuleBase);
+	mTableManager->Init(mModuleBase);
 
 	return true;
 }
@@ -121,6 +125,7 @@ bool LR2HackBox::Unhook() {
 	mRivalLeaderboard->Deinit();
 	mJudgeLimiter->Deinit();
 	mBattleFixes->Deinit();
+	mTableManager->Deinit();
 	return true;
 }
 
@@ -230,6 +235,10 @@ void LR2HackBoxMenu::Loop() {
 		LR2HackBox::Get().mJudgeLimiter->Menu();
 	}
 
+	if (ImGui::CollapsingHeader("Table Creator")) {
+		LR2HackBox::Get().mTableManager->Menu();
+	}
+
 	if (ImGui::CollapsingHeader("Game Options")) {
 		LR2HackBox::Get().mGameOptions->Menu();
 	}
@@ -331,6 +340,7 @@ void LR2HackBoxMenu::InitBindings() {
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 	mMenuBindings["Menu Open"] = Binding(config.ReadValue("iBindMenuOpen", VK_INSERT), true);
 	mMenuBindings["Stats Open"] = Binding(config.ReadValue("iBindStatsOpen", 0), false);
+	mMenuBindings["Tabler Open"] = Binding(config.ReadValue("iBindTablerOpen", 0), false);
 }
 
 void LR2HackBoxMenu::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -341,6 +351,9 @@ void LR2HackBoxMenu::MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM l
 		}
 		if (wParam == mMenuBindings["Stats Open"].vKey) {
 			((Numbers*)LR2HackBox::Get().mNumbers.get())->ToggleColumnStatsMenu();
+		}
+		if (wParam == mMenuBindings["Tabler Open"].vKey) {
+			((TableManager*)LR2HackBox::Get().mTableManager.get())->ToggleMenu();
 		}
 
 		if (mMenuBindingAwaitsRebind.second) {

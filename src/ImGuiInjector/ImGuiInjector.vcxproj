@@ -40,6 +40,7 @@
     <ClCompile Include="..\..\ext\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\..\ext\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\..\ext\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\..\ext\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="..\..\ext\kiero\examples\imgui\impl\d3d10_impl.cpp" />
     <ClCompile Include="..\..\ext\kiero\examples\imgui\impl\d3d11_impl.cpp" />
     <ClCompile Include="..\..\ext\kiero\examples\imgui\impl\d3d9_impl.cpp" />
