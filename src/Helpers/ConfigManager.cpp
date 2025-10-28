@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <charconv>
+#include <filesystem>
 
 ConfigManager::ConfigManager(std::string path, bool load) {
 	ConfigManager::path = path;
@@ -33,6 +34,11 @@ void ConfigManager::WriteValue(std::string name, int value) {
 template <>
 void ConfigManager::WriteValue<float>(std::string name, float value) {
 	WriteValue(name, std::to_string(value));
+}
+
+template<>
+void ConfigManager::WriteValue(std::string name, std::filesystem::path value) {
+	WriteValue(name, value.string());
 }
 
 template <typename T>
@@ -86,6 +92,15 @@ void ConfigManager::WriteArray<float>(std::string name, const std::vector<float>
 	config[name] = values.str();
 }
 
+template <>
+void ConfigManager::WriteArray<std::filesystem::path>(std::string name, const std::vector<std::filesystem::path>& array) {
+	std::stringstream values;
+	for (auto& value : array) {
+		values << value.string() << "<NEXT>";
+	}
+	config[name] = values.str();
+}
+
 template <typename T>
 void ConfigManager::WriteArray(std::string name, const std::vector<T>& array) {
 	WriteArray(name, array);
@@ -126,6 +141,17 @@ template <>
 float ConfigManager::ReadValue(std::string name, float def) {
 	try {
 		return std::stof(config[name]);
+	}
+	catch (...) {
+		WriteValueAndSave(name, def);
+		return def;
+	}
+}
+
+template <>
+std::filesystem::path ConfigManager::ReadValue(std::string name, std::filesystem::path def) {
+	try {
+		return config[name];
 	}
 	catch (...) {
 		WriteValueAndSave(name, def);
@@ -186,6 +212,17 @@ void ConfigManager::ReadArray<float>(std::string name, std::vector<float>& array
 		if (ec == std::errc()) {
 			array.push_back(fValue);
 		}
+		offsetFirst = offsetLast + 6;
+	}
+}
+
+template <>
+void ConfigManager::ReadArray<std::filesystem::path>(std::string name, std::vector<std::filesystem::path>& array) {
+	std::string values(config[name]);
+	std::string value;
+	for (size_t offsetFirst = 0, offsetLast = values.find("<NEXT>"); offsetLast <= values.size() - 6; offsetLast = values.find("<NEXT>", offsetFirst)) {
+		value = values.substr(offsetFirst, offsetLast - offsetFirst);
+		array.push_back(value);
 		offsetFirst = offsetLast + 6;
 	}
 }
