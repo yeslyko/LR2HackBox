@@ -135,12 +135,6 @@ void Misc::OnPlayISetSelecter(SafetyHookContext& regs) {
 
 	if (!(game.procPhase == 2 || game.procPhase == 3)) return;
 
-	typedef int(__cdecl* tReleaseSound)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound);
-	tReleaseSound ReleaseSound = (tReleaseSound)0x4B8040;
-
-	ReleaseSound(&game.audio, metronomeMeasureFx);
-	ReleaseSound(&game.audio, metronomeBeatFx);
-
 	if (!misc.mIsRetryTweaks) return;
 
 	if (game.gameplay.replay.status > 1) return;
@@ -338,6 +332,12 @@ void Misc::OnSelectExit() {
 void Misc::OnPlayExit() {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 	if (game.config.play.autojudge == 3) game.config.play.judgetiming = mAutoadjustResetLastVal;
+
+	typedef int(__cdecl* tReleaseSound)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound);
+	tReleaseSound ReleaseSound = (tReleaseSound)0x4B8040;
+
+	ReleaseSound(&game.audio, metronomeMeasureFx);
+	ReleaseSound(&game.audio, metronomeBeatFx);
 }
 
 void Misc::OnSceneExitSwitch(SafetyHookContext& regs) {
