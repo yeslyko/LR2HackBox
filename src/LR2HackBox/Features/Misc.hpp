@@ -72,6 +72,7 @@ private:
 
 	static void OnDrawNotesGetSongtimer(SafetyHookContext& regs);
 
+	LR2::SOUNDDATA* mReadyFx = nullptr;
 	LR2::SOUNDDATA* mMetronomeMeasureFx = nullptr;
 	LR2::SOUNDDATA* mMetronomeBeatFx = nullptr;
 	int mMetronomeLastPlayedBeat = 0;
@@ -111,6 +112,8 @@ private:
 	static void OnGhostDecodeAdd(SafetyHookContext& regs);
 
 	static void OnSetNewBind(SafetyHookContext& regs);
+
+	static void OnPlayReady(SafetyHookContext& regs);
 
 	std::vector<SafetyHookMid> mMidHooks;
 
