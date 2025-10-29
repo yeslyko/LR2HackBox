@@ -128,6 +128,43 @@ void Misc::QuickRestart(bool newRandom) {
 static LR2::SOUNDDATA* metronomeMeasureFx;
 static LR2::SOUNDDATA* metronomeBeatFx;
 
+void Misc::OnPlayIBeforeInput(SafetyHookContext& regs) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+
+	LR2::game& game = *LR2HackBox::Get().GetGame();
+
+	if (!misc.mIsRetryTweaks) return;
+	switch (misc.mBlockEscape) {
+	case 1:
+		if (game.KeyInput.inputID[0x01] == 3) misc.mBlockEscape = 0;
+		break;
+	case 2:
+		if (game.KeyInput.mouse_buttonR == 3) misc.mBlockEscape = 0;
+		break;
+	case 3:
+		if (game.KeyInput.p1_buttonInput[12] == 3 || game.KeyInput.p1_buttonInput[13] == 3) misc.mBlockEscape = 0;
+		break;
+	case 4:
+		if (game.KeyInput.p2_buttonInput[12] == 3 || game.KeyInput.p2_buttonInput[13] == 3) misc.mBlockEscape = 0;
+		break;
+	default: break;
+	}
+}
+
+void Misc::OnPlayIHandleEscape(SafetyHookContext& regs) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+
+	LR2::game& game = *LR2HackBox::Get().GetGame();
+
+	if (!misc.mIsRetryTweaks) return;
+	if (!misc.mBlockEscape) return;
+
+	auto ResetTimeLapse = (int(__cdecl*)(int timerID, LR2::Timer * T))0x4B67D0;
+	ResetTimeLapse(2, &game.timer1);
+	game.procPhase = 1;
+	game.gameplay.flag_closingPhase = 0;
+}
+
 void Misc::OnPlayISetSelecter(SafetyHookContext& regs) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 
@@ -138,13 +175,22 @@ void Misc::OnPlayISetSelecter(SafetyHookContext& regs) {
 	if (!misc.mIsRetryTweaks) return;
 
 	if (game.gameplay.replay.status > 1) return;
-	//if (game.gameplay.courseType != -1) return;
 	if (game.gameplay.player[0].totalnotes <= game.gameplay.player[0].note_current) return;
 	
+	auto wants_escape = [](LR2::game& game) {
+		LR2::inputStructure& input = game.KeyInput;
+		if (input.inputID[0x01] == 1 || input.inputID[0x01] == 2) return 1;
+		if (game.config.play.disableleftclickexit == 0 && (input.mouse_buttonR == 1 || input.mouse_buttonR == 2)) return 2;
+		if (input.p1_buttonInput[12] == 1 || input.p1_buttonInput[13] == 1) return 3;
+		if (input.p2_buttonInput[12] == 1 || input.p2_buttonInput[13] == 1) return 4;
+		return 0;
+	};
 	if (game.KeyInput.p1_buttonInput[12] == 1 || game.KeyInput.p2_buttonInput[12] == 1) {
+		misc.mBlockEscape = wants_escape(game);
 		misc.QuickRestart(true);
 	}
 	else if (game.KeyInput.p1_buttonInput[13] == 1 || game.KeyInput.p2_buttonInput[13] == 1) {
+		misc.mBlockEscape = wants_escape(game);
 		misc.QuickRestart(false);
 	}
 }
@@ -1005,6 +1051,8 @@ void Misc::LoadConfig() {
 
 void Misc::SetHooks() {
 	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x9573), OnSetRetryFlag));
+	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x0197DF, OnPlayIBeforeInput));
+	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x019864, OnPlayIHandleEscape));
 	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x0198C1), OnPlayISetSelecter));
 	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x02D36C), OnInitPlay));
 	mMidHooks.push_back(safetyhook::create_mid((void*)(mModuleBase + 0x0AD24D), OnInitRetry));

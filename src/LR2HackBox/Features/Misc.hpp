@@ -32,12 +32,15 @@ private:
 	void SetHooks();
 
 	static void OnSetRetryFlag(SafetyHookContext& regs);
+	static void OnPlayIBeforeInput(SafetyHookContext& regs);
+	static void OnPlayIHandleEscape(SafetyHookContext& regs);
 	static void OnPlayISetSelecter(SafetyHookContext& regs);
 	void OnInit(SafetyHookContext& regs);
 	static void OnInitPlay(SafetyHookContext& regs);
 	static void OnInitRetry(SafetyHookContext& regs);
 
 	int mOrigGaugeType = 0;
+	int mBlockEscape = 0;
 
 	static void OnRandomMixInput(SafetyHookContext& regs);
 	static void OnSceneInitSwitch(SafetyHookContext& regs);
