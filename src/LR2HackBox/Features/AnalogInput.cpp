@@ -16,6 +16,21 @@
 typedef double(__cdecl* tGetTimeWrap)();
 tGetTimeWrap GetTimeWrap = (tGetTimeWrap)0x4B6890;
 
+static bool SetDeadzone(void* pDevice, unsigned int value) {
+    if (!pDevice) return false;
+    IDirectInputDevice7& device = *(IDirectInputDevice7*)pDevice;
+    unsigned int deadzone = std::clamp(value, 0u, 10000u);
+    DIPROPDWORD prop;
+    prop.diph.dwSize = sizeof(DIPROPDWORD);
+    prop.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+    prop.diph.dwObj = 0; // device property 
+    prop.diph.dwHow = DIPH_DEVICE;
+    prop.dwData = deadzone;
+    HRESULT result = device.SetProperty(DIPROP_DEADZONE, &prop.diph);
+    if (SUCCEEDED(result)) return true;
+    return false;
+}
+
 typedef HRESULT(__stdcall* tGetDeviceState)(IDirectInputDevice7* pThis, DWORD cbData, LPVOID lpvData);
 tGetDeviceState GetDeviceState = nullptr;
 HRESULT __stdcall AnalogInput::OnGetDeviceState(void* pThis, DWORD cbData, LPVOID lpvData) {
@@ -31,15 +46,6 @@ HRESULT __stdcall AnalogInput::OnGetDeviceState(void* pThis, DWORD cbData, LPVOI
 
     if (!analogInput.devicesMap.contains(pThis)) {
         DIDEVICEINSTANCE ddinst;
-        ddinst.dwSize = sizeof(DIDEVICEINSTANCE);
-        device.GetDeviceInfo(&ddinst);
-        DIPROPDWORD prop;
-        prop.diph.dwSize = sizeof(DIPROPDWORD);
-        prop.diph.dwHeaderSize = sizeof(DIPROPHEADER);
-        prop.diph.dwObj = 0; // device property 
-        prop.diph.dwHow = DIPH_DEVICE;
-        prop.dwData = 0;
-        HRESULT result = device.SetProperty(DIPROP_DEADZONE, &prop.diph);
         analogInput.devicesMap[pThis] = ddinst.tszProductName;
         analogInput.devices.push_back(pThis);
         analogInput.deviceNames.push_back(analogInput.devicesMap[pThis].c_str());
@@ -47,6 +53,7 @@ HRESULT __stdcall AnalogInput::OnGetDeviceState(void* pThis, DWORD cbData, LPVOI
             std::string sideNotation = "P" + std::to_string(i + 1);
             std::string savedDevice = LR2HackBox::Get().mConfig->ReadValue<std::string>("sAnalogInputDevice" + sideNotation, "");
             if (savedDevice == ddinst.tszProductName) {
+                SetDeadzone(pThis, 0);
                 analogInput.boundDevices[i].pDevice = pThis;
                 analogInput.boundDevices[i].name = savedDevice;
                 analogInput.boundDevices[i].boundDeviceIdx = analogInput.devices.size() - 1;
@@ -288,8 +295,10 @@ void AnalogInput::Menu() {
             std::string selectedDeviceText = "Selected Input Device##" + sideNotation;
             ImGui::SetNextItemWidth(boxWidth);
             if (ImGui::Combo(selectedDeviceText.c_str(), &device.boundDeviceIdx, deviceNames.data(), deviceNames.size())) {
+                SetDeadzone(device.pDevice, 500);
                 device.pDevice = devices[device.boundDeviceIdx];
                 device.name = deviceNames[device.boundDeviceIdx];
+                SetDeadzone(device.pDevice, 0);
                 device.Reset();
 
                 config.WriteValueAndSave("sAnalogInputDevice" + sideNotation, device.name);
