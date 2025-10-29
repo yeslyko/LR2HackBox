@@ -107,6 +107,8 @@ private:
 
 	static void OnGhostDecodeAdd(SafetyHookContext& regs);
 
+	static void OnSetNewBind(SafetyHookContext& regs);
+
 	std::vector<SafetyHookMid> mMidHooks;
 
 	bool mIsRetryTweaks = false;
@@ -127,4 +129,5 @@ private:
 	bool mIsRivalLeaderboard = false;
 	bool mIsBattleFixes = false;
 	bool mIsGhostFix = false;
+	bool mIsBindsFix = false;
 };

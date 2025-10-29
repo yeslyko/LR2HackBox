@@ -994,6 +994,14 @@ void Misc::OnGhostDecodeAdd(SafetyHookContext& regs) {
 	if (rep == 0) rep = 1;
 }
 
+void Misc::OnSetNewBind(SafetyHookContext& regs) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+	if (!misc.mIsBindsFix) return;
+
+	auto& newBind = regs.eax;
+	if (newBind == 0xD3) newBind = 0; // if KEY_INPUT_DELETE
+}
+
 bool Misc::EarlyInit(uintptr_t moduleBase) {
 	Misc::mModuleBase = moduleBase;
 
@@ -1037,6 +1045,7 @@ void Misc::LoadConfig() {
 	mIsSkipResultSub = config.ReadValue("bSkipResultSub", mIsSkipResultSub);
 	mIsResultQuickIR = config.ReadValue("bResultQuickIR", mIsResultQuickIR);
 	mIsGhostFix = config.ReadValue("bGhostFix", mIsGhostFix);
+	mIsBindsFix = config.ReadValue("bBindsFix", mIsBindsFix);
 	mAutoadjustClampMin = config.ReadValue("iAutoadjustClampMin", mAutoadjustClampMin);
 	mAutoadjustClampMax = config.ReadValue("iAutoadjustClampMax", mAutoadjustClampMax);
 
@@ -1079,6 +1088,8 @@ void Misc::SetHooks() {
 	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x0BC8FF, OnIrSendSuccess));
 
 	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x0A9C23, OnGhostDecodeAdd));
+
+	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x98F1, OnSetNewBind));
 
 	if (MH_CreateHookEx((LPVOID)SaveDrawScreenToPNG, &OnSaveDrawScreenToPNG, &SaveDrawScreenToPNG) != MH_OK)
 	{
@@ -1359,6 +1370,12 @@ void Misc::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("Fixes a bug where last note of a ghost would sometimes get incorrect judgement, resulting in wrong score.");
+
+	if (ImGui::Checkbox("Delete Keybind Fix", &mIsBindsFix)) {
+		config.WriteValueAndSave("bBindsFix", mIsBindsFix);
+	}
+	ImGui::SameLine();
+	HelpMarker("Fixes a bug where in key config scene, using 'DELETE' button to unbind a key would bind it to 'DELETE' instead");
 
 	if (ImGui::Checkbox("Analog scratch support", &mIsAnalogInput)) {
 		config.WriteValueAndSave("bAnalogInput", mIsAnalogInput);
