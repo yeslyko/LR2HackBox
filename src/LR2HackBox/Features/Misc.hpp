@@ -1,5 +1,6 @@
 #include "BaseModels/ModFeature.hpp"
 
+#include <LR2Mem/LR2Typedefs.hpp>
 #include <safetyhook.hpp>
 
 #include <stdint.h>
@@ -71,6 +72,8 @@ private:
 
 	static void OnDrawNotesGetSongtimer(SafetyHookContext& regs);
 
+	LR2::SOUNDDATA* mMetronomeMeasureFx = nullptr;
+	LR2::SOUNDDATA* mMetronomeBeatFx = nullptr;
 	int mMetronomeLastPlayedBeat = 0;
 	int mMetronomePrevMeasureIdx = -1;
 

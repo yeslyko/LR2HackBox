@@ -125,9 +125,6 @@ void Misc::QuickRestart(bool newRandom) {
 	StopKeysounds();
 }
 
-static LR2::SOUNDDATA* metronomeMeasureFx;
-static LR2::SOUNDDATA* metronomeBeatFx;
-
 void Misc::OnPlayIBeforeInput(SafetyHookContext& regs) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 
@@ -328,8 +325,8 @@ void Misc::OnPlayInit() {
 		typedef int(__cdecl* tLoadSound)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound, LR2::CSTR filepath, int loop, int disableDSP, int previewFlag);
 		tLoadSound LoadSound = (tLoadSound)0x4B8BB0;
 
-		LoadSound(&game.audio, metronomeMeasureFx, LR2::CSTR("LR2files\\Sound\\LR2HackBox\\metronome-measure.wav"), 0, game.config.sound.disabledsp, 0);
-		LoadSound(&game.audio, metronomeBeatFx, LR2::CSTR("LR2files\\Sound\\LR2HackBox\\metronome-beat.wav"), 0, game.config.sound.disabledsp, 0);
+		LoadSound(&game.audio, mMetronomeMeasureFx, LR2::CSTR("LR2files\\Sound\\LR2HackBox\\metronome-measure.wav"), 0, game.config.sound.disabledsp, 0);
+		LoadSound(&game.audio, mMetronomeBeatFx, LR2::CSTR("LR2files\\Sound\\LR2HackBox\\metronome-beat.wav"), 0, game.config.sound.disabledsp, 0);
 	}
 }
 
@@ -382,8 +379,8 @@ void Misc::OnPlayExit() {
 	typedef int(__cdecl* tReleaseSound)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound);
 	tReleaseSound ReleaseSound = (tReleaseSound)0x4B8040;
 
-	ReleaseSound(&game.audio, metronomeMeasureFx);
-	ReleaseSound(&game.audio, metronomeBeatFx);
+	ReleaseSound(&game.audio, mMetronomeMeasureFx);
+	ReleaseSound(&game.audio, mMetronomeBeatFx);
 }
 
 void Misc::OnSceneExitSwitch(SafetyHookContext& regs) {
@@ -534,11 +531,11 @@ void Misc::OnDrawNotesGetSongtimer(SafetyHookContext& regs) {
 	if (currentBeat != misc.mMetronomeLastPlayedBeat) {
 		misc.mMetronomeLastPlayedBeat = currentBeat;
 		if (currentBeat == 0) {
-			LR2::SOUNDDATA* sfx = metronomeBeatFx->load == 1 ? metronomeMeasureFx : &game.audio.sysSound.folder_open;
+			LR2::SOUNDDATA* sfx = misc.mMetronomeBeatFx->load == 1 ? misc.mMetronomeMeasureFx : &game.audio.sysSound.folder_open;
 			GamePlaySound(&game.audio, sfx, game.audio.chnBgm, -1);
 		}
 		else {
-			LR2::SOUNDDATA* sfx = metronomeBeatFx->load == 1 ? metronomeBeatFx : &game.audio.sysSound.folder_close;
+			LR2::SOUNDDATA* sfx = misc.mMetronomeBeatFx->load == 1 ? misc.mMetronomeBeatFx : &game.audio.sysSound.folder_close;
 			GamePlaySound(&game.audio, sfx, game.audio.chnBgm, -1);
 		}
 	}
@@ -1016,15 +1013,15 @@ bool Misc::Init(uintptr_t moduleBase) {
 
 	PreventKeysoundLeakOnPlayInit();
 
-	metronomeBeatFx = new LR2::SOUNDDATA();
-	metronomeMeasureFx = new LR2::SOUNDDATA();
+	mMetronomeBeatFx = new LR2::SOUNDDATA();
+	mMetronomeMeasureFx = new LR2::SOUNDDATA();
 
 	return true;
 }
 
 bool Misc::Deinit() {
-	delete(metronomeBeatFx);
-	delete(metronomeMeasureFx);
+	delete(mMetronomeBeatFx);
+	delete(mMetronomeMeasureFx);
 	return true;
 }
 
