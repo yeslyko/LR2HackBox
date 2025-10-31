@@ -115,6 +115,8 @@ private:
 
 	static void OnPlayReady(SafetyHookContext& regs);
 
+	static void OnCopyGhostGaugetype(SafetyHookContext& regs);
+
 	std::vector<SafetyHookMid> mMidHooks;
 
 	bool mIsRetryTweaks = false;
@@ -136,4 +138,5 @@ private:
 	bool mIsBattleFixes = false;
 	bool mIsGhostFix = false;
 	bool mIsBindsFix = false;
+	bool mIsNoGhostGaugetype = false;
 };

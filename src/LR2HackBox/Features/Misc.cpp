@@ -1008,6 +1008,14 @@ void Misc::OnPlayReady(SafetyHookContext& regs) {
 	GamePlaySound(&game.audio, misc.mReadyFx, game.audio.chnBgm, -1);
 }
 
+void Misc::OnCopyGhostGaugetype(SafetyHookContext& regs) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+	LR2::game& game = *LR2HackBox::Get().GetGame();
+	if (misc.mIsNoGhostGaugetype && game.gameplay.ghostBattle) {
+		game.config.play.gaugeOption[0] = misc.mOrigGaugeType;
+	}
+}
+
 bool Misc::EarlyInit(uintptr_t moduleBase) {
 	Misc::mModuleBase = moduleBase;
 
@@ -1054,6 +1062,7 @@ void Misc::LoadConfig() {
 	mIsResultQuickIR = config.ReadValue("bResultQuickIR", mIsResultQuickIR);
 	mIsGhostFix = config.ReadValue("bGhostFix", mIsGhostFix);
 	mIsBindsFix = config.ReadValue("bBindsFix", mIsBindsFix);
+	mIsNoGhostGaugetype = config.ReadValue("bNoGhostGaugetype", mIsNoGhostGaugetype);
 	mAutoadjustClampMin = config.ReadValue("iAutoadjustClampMin", mAutoadjustClampMin);
 	mAutoadjustClampMax = config.ReadValue("iAutoadjustClampMax", mAutoadjustClampMax);
 
@@ -1100,6 +1109,8 @@ void Misc::SetHooks() {
 	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x98F1, OnSetNewBind));
 
 	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x02CC4A, OnPlayReady));
+
+	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x02D0F6, OnCopyGhostGaugetype));
 
 	if (MH_CreateHookEx((LPVOID)SaveDrawScreenToPNG, &OnSaveDrawScreenToPNG, &SaveDrawScreenToPNG) != MH_OK)
 	{
@@ -1380,6 +1391,12 @@ void Misc::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("Fixes a bug where last note of a ghost would sometimes get incorrect judgement, resulting in wrong score.");
+
+	if (ImGui::Checkbox("No Ghost Gauge", &mIsNoGhostGaugetype)) {
+		config.WriteValueAndSave("bNoGhostGaugetype", mIsNoGhostGaugetype);
+	}
+	ImGui::SameLine();
+	HelpMarker("Maintains your selected gauge type in G-BATTLE, rather than using ghost gauge type.");
 
 	if (ImGui::Checkbox("Delete Keybind Fix", &mIsBindsFix)) {
 		config.WriteValueAndSave("bBindsFix", mIsBindsFix);
