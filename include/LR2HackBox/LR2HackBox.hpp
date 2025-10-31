@@ -1,3 +1,4 @@
+#pragma once
 #include "BaseModels/ModBody.hpp"
 #include "BaseModels/ImGuiMenu.hpp"
 #include "BaseModels/ModFeature.hpp"
@@ -78,6 +79,7 @@ public:
 	std::unique_ptr<ModFeature> mBattleFixes;
 	std::unique_ptr<ModFeature> mTableManager;
 
+	std::unique_ptr<ModFeature> mConsole;
 	std::unique_ptr<ConfigManager> mConfig;
 
 	std::chrono::system_clock::time_point mInitTime;

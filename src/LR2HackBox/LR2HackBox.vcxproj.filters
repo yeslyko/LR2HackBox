@@ -60,6 +60,9 @@
     <ClInclude Include="Features\TableManager.hpp">
       <Filter>Header Files\Features</Filter>
     </ClInclude>
+    <ClInclude Include="Features\LogConsole.hpp">
+      <Filter>Header Files\Features</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LR2HackBox.cpp">
@@ -102,6 +105,9 @@
       <Filter>Source Files\Features</Filter>
     </ClCompile>
     <ClCompile Include="Features\TableManager.cpp">
+      <Filter>Source Files\Features</Filter>
+    </ClCompile>
+    <ClCompile Include="Features\LogConsole.cpp">
       <Filter>Source Files\Features</Filter>
     </ClCompile>
   </ItemGroup>

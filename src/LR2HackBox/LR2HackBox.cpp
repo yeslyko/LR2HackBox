@@ -25,6 +25,7 @@
 #include "Features/JudgeLimiter.hpp"
 #include "Features/BattleFixes.hpp"
 #include "Features/TableManager.hpp"
+#include "Features/LogConsole.hpp"
 
 #pragma comment(lib, "Helpers.lib")
 #pragma comment(lib, "ImGuiInjector.lib")
@@ -49,6 +50,8 @@ bool LR2HackBox::EarlyHook() {
 
 	
 	mConfig.reset(new ConfigManager("LR2HackBox.ini"));
+	mConsole.reset(new LogConsole());
+	mConsole->EarlyInit(mModuleBase);
 
 	LoadConfig();
 
@@ -99,6 +102,7 @@ bool LR2HackBox::Hook() {
 	
 	mMenu.InitBindings();
 
+	mConsole->Init(mModuleBase);
 	mUnrandomizer->Init(mModuleBase);
 	mFunny->Init(mModuleBase);
 	mMisc->Init(mModuleBase);
@@ -126,6 +130,7 @@ bool LR2HackBox::Unhook() {
 	mJudgeLimiter->Deinit();
 	mBattleFixes->Deinit();
 	mTableManager->Deinit();
+	mConsole->Deinit();
 	return true;
 }
 
@@ -241,6 +246,10 @@ void LR2HackBoxMenu::Loop() {
 
 	if (ImGui::CollapsingHeader("Game Options")) {
 		LR2HackBox::Get().mGameOptions->Menu();
+	}
+
+	if (ImGui::CollapsingHeader("Log Console")) {
+		LR2HackBox::Get().mConsole->Menu();
 	}
 
 	if (ImGui::CollapsingHeader("Settings")) {

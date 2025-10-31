@@ -24,6 +24,7 @@
     <ClCompile Include="Features\Funny.cpp" />
     <ClCompile Include="Features\GameOptions.cpp" />
     <ClCompile Include="Features\JudgeLimiter.cpp" />
+    <ClCompile Include="Features\LogConsole.cpp" />
     <ClCompile Include="Features\MemoryTracker.cpp" />
     <ClCompile Include="Features\Misc.cpp" />
     <ClCompile Include="Features\Numbers.cpp" />
@@ -38,6 +39,7 @@
     <ClInclude Include="Features\Funny.hpp" />
     <ClInclude Include="Features\GameOptions.hpp" />
     <ClInclude Include="Features\JudgeLimiter.hpp" />
+    <ClInclude Include="Features\LogConsole.hpp" />
     <ClInclude Include="Features\MemoryTracker.hpp" />
     <ClInclude Include="Features\Misc.hpp" />
     <ClInclude Include="Features\Numbers.hpp" />
