@@ -46,6 +46,8 @@ HRESULT __stdcall AnalogInput::OnGetDeviceState(void* pThis, DWORD cbData, LPVOI
 
     if (!analogInput.devicesMap.contains(pThis)) {
         DIDEVICEINSTANCE ddinst;
+        ddinst.dwSize = sizeof(DIDEVICEINSTANCE);
+        device.GetDeviceInfo(&ddinst);
         analogInput.devicesMap[pThis] = ddinst.tszProductName;
         analogInput.devices.push_back(pThis);
         analogInput.deviceNames.push_back(analogInput.devicesMap[pThis].c_str());
