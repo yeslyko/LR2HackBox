@@ -117,6 +117,10 @@ private:
 
 	static void OnCopyGhostGaugetype(SafetyHookContext& regs);
 
+	bool MultithreadKeysoundsToggle(bool enable);
+	static void OnLoadKeysounds(SafetyHookContext& regs);
+	static void OnLoadKeysoundsExit(SafetyHookContext& regs);
+
 	std::vector<SafetyHookMid> mMidHooks;
 
 	bool mIsRetryTweaks = false;
@@ -139,4 +143,5 @@ private:
 	bool mIsGhostFix = false;
 	bool mIsBindsFix = false;
 	bool mIsNoGhostGaugetype = false;
+	bool mIsMultithreadKeysounds = false;
 };

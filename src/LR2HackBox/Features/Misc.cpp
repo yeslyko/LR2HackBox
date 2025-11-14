@@ -16,6 +16,7 @@
 #include "ScoreCannon.hpp"
 #include "RivalLeaderboard.hpp"
 #include "BattleFixes.hpp"
+#include "LogConsole.hpp"
 
 #include "ImGuiInjector/ImGuiInjector.hpp"
 #include <safetyhook.hpp>
@@ -74,6 +75,7 @@ bool Misc::SqliteGetColumn(T* output, std::string querry, int columnIdx) {
 }
 
 auto GamePlaySound = (int(__cdecl*)(LR2::AUDIO * aud, LR2::SOUNDDATA * sound, LR2::FMOD_CHANNELGROUP * channelgroup, int stage))0x4B8F20;
+auto LoadSound = (int(__cdecl*)(LR2::AUDIO * aud, LR2::SOUNDDATA * sound, LR2::CSTR filepath, int loop, int disableDSP, int previewFlag))0x4B8BB0;
 
 static void StopKeysounds() {
 	typedef int(__cdecl* tStopSound)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound);
@@ -321,8 +323,6 @@ void Misc::OnPlayInit() {
 
 	if (game.config.play.autojudge == 3) game.config.play.judgetiming = mAutoadjustResetLastVal;
 
-	typedef int(__cdecl* tLoadSound)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound, LR2::CSTR filepath, int loop, int disableDSP, int previewFlag);
-	tLoadSound LoadSound = (tLoadSound)0x4B8BB0;
 	LoadSound(&game.audio, mReadyFx, LR2::CSTR("LR2files\\Sound\\LR2HackBox\\ready.wav"), 0, game.config.sound.disabledsp, 0);
 
 	mMetronomeLastPlayedBeat = 0;
@@ -1016,6 +1016,78 @@ void Misc::OnCopyGhostGaugetype(SafetyHookContext& regs) {
 	}
 }
 
+bool Misc::MultithreadKeysoundsToggle(bool enable) {
+	LR2::game& game = *LR2HackBox::Get().GetGame();
+	if (game.config.sound.disablefmod) {
+		LogConsole::AddLog(LOG_ERROR, "Fast keysounds loading can only work with FMOD enabled.");
+		return false;
+	}
+	if (game.gameplay.hThreadPreview) {
+		LogConsole::AddLog(LOG_ERROR, "Fast keysounds loading can only be toggled when loading isn't in progress.");
+		return !enable;
+	}
+
+	constexpr uintptr_t codeBegin = 0x4ACD0E;
+	constexpr uintptr_t codeEnd = 0x4ACD62;
+	constexpr size_t len = codeEnd - codeBegin;
+
+	static std::array<unsigned char, len>codeOrig{};
+	static std::array<SafetyHookMid, 2>hooks{};
+	static bool firstPass = true;
+	if (firstPass) {
+		firstPass = false;
+		memcpy(codeOrig.data(), (void*)codeBegin, len);
+}
+
+	DWORD oldProtection = 0;
+	BOOL hResult = VirtualProtect((void*)codeBegin, len, PAGE_EXECUTE_READWRITE, &oldProtection);
+	if (enable) {
+		memset((void*)codeBegin, 0x90, len);
+		hooks[0] = safetyhook::create_mid(mModuleBase + 0x0ACD0E, OnLoadKeysounds);
+		hooks[1] = safetyhook::create_mid(mModuleBase + 0x0ACD96, OnLoadKeysoundsExit);
+	}
+	else {
+		std::for_each(hooks.begin(), hooks.end(), [](auto& hook) { hook.~MidHook(); });
+		memcpy((void*)codeBegin, codeOrig.data(), len);
+	}
+	DWORD discard = 0;
+	VirtualProtect((void*)codeBegin, len, oldProtection, &discard);
+	return enable;
+}
+
+static std::vector<int> KeysoundsLoadQueue;
+void Misc::OnLoadKeysounds(SafetyHookContext& regs) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+	LR2::game& game = *LR2HackBox::Get().GetGame();
+	LR2::gameplay& gameplay = game.gameplay;
+	int i = regs.ebx;
+	KeysoundsLoadQueue.push_back(i);
+}
+
+void Misc::OnLoadKeysoundsExit(SafetyHookContext& regs) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+	LR2::game& game = *LR2HackBox::Get().GetGame();
+	LR2::gameplay& gameplay = game.gameplay;
+	std::atomic<int> KeysoundsLoaded = 0;
+	std::atomic<bool> KeysoundsLoadAbort = false;
+	std::array<std::thread, 16> KeysoundsLoadWorkers{};
+	for (auto& worker : KeysoundsLoadWorkers) {
+		worker = std::thread([&](LR2::game* game, LR2::gameplay* gameplay) {
+			while (!KeysoundsLoadAbort) {
+				int queue_i = KeysoundsLoaded++;
+				if (queue_i >= KeysoundsLoadQueue.size())
+					break;
+				int i = KeysoundsLoadQueue[queue_i];
+				LoadSound(&game->audio, &gameplay->keysound[i], gameplay->keysound_filename[i], 0, game->config.sound.disabledsp, 0);
+				if (gameplay->keysound[i].length > 60000 && gameplay->keysound[i].load) gameplay->flag_longsound = 1;
+				gameplay->loadObject_loaded++;
+			}
+			}, &game, &gameplay);
+	}
+	std::for_each(KeysoundsLoadWorkers.begin(), KeysoundsLoadWorkers.end(), [](auto& worker) { if (worker.joinable()) worker.join(); });
+	KeysoundsLoadQueue.clear();
+}
+
 bool Misc::EarlyInit(uintptr_t moduleBase) {
 	Misc::mModuleBase = moduleBase;
 
@@ -1029,6 +1101,7 @@ bool Misc::Init(uintptr_t moduleBase) {
 	Misc::mModuleBase = moduleBase;
 
 	PreventKeysoundLeakOnPlayInit();
+	MultithreadKeysoundsToggle(mIsMultithreadKeysounds);
 
 	mReadyFx = new LR2::SOUNDDATA();
 	mMetronomeBeatFx = new LR2::SOUNDDATA();
@@ -1063,6 +1136,7 @@ void Misc::LoadConfig() {
 	mIsGhostFix = config.ReadValue("bGhostFix", mIsGhostFix);
 	mIsBindsFix = config.ReadValue("bBindsFix", mIsBindsFix);
 	mIsNoGhostGaugetype = config.ReadValue("bNoGhostGaugetype", mIsNoGhostGaugetype);
+	mIsMultithreadKeysounds = config.ReadValue("bMultithreadKeysounds", mIsMultithreadKeysounds);
 	mAutoadjustClampMin = config.ReadValue("iAutoadjustClampMin", mAutoadjustClampMin);
 	mAutoadjustClampMax = config.ReadValue("iAutoadjustClampMax", mAutoadjustClampMax);
 
@@ -1403,6 +1477,13 @@ void Misc::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("Fixes a bug where in key config scene, using 'DELETE' button to unbind a key would bind it to 'DELETE' instead");
+
+	if (ImGui::Checkbox("Fast Keysounds Load", &mIsMultithreadKeysounds)) {
+		mIsMultithreadKeysounds = MultithreadKeysoundsToggle(mIsMultithreadKeysounds);
+		config.WriteValueAndSave("bMultithreadKeysounds", mIsMultithreadKeysounds);
+	}
+	ImGui::SameLine();
+	HelpMarker("Makes the song load faster by loading keysounds on multiple threads. Also, allows for safe use of song preview feature. For even faster loading, an update of 'fmodex.dll' to version 4.26.2 is recommended");
 
 	if (ImGui::Checkbox("Analog scratch support", &mIsAnalogInput)) {
 		config.WriteValueAndSave("bAnalogInput", mIsAnalogInput);
