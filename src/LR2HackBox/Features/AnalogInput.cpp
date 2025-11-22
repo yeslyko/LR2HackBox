@@ -283,6 +283,7 @@ const char* const axisNames[3]{
 };
 
 void AnalogInput::Menu() {
+    struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "AnalogInput" };
     ConfigManager& config = *LR2HackBox::Get().mConfig;
     for (int i = 0; i < std::size(boundDevices); i++) {
         InputDevice& device = boundDevices[i];

@@ -108,6 +108,8 @@ static void HelpMarker(const char* desc) {
 }
 
 void Funny::Menu() {
+	struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "Funny" };
+
 	LR2::game* game = LR2HackBox::Get().GetGame();
 
 	ImGui::Checkbox("Invisible Scratch", &mIsInvisibleScratch);

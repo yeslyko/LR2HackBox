@@ -1347,6 +1347,8 @@ void Misc::CustomSelectMenu() {
 }
 
 void Misc::Menu() {
+	struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "Misc" };
+
 	LR2::game* game = LR2HackBox::Get().GetGame();
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 

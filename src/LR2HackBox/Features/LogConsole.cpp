@@ -21,6 +21,8 @@ void LogConsole::Clear() {
 }
 
 void LogConsole::Menu() {
+    struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "LogConsole" };
+
     if (ImGui::BeginPopup("Options")) {
         ImGui::Checkbox("Auto-scroll", &mIsAutoScroll);
         ImGui::EndPopup();

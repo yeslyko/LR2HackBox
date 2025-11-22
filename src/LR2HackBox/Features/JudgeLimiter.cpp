@@ -60,6 +60,8 @@ static void HelpMarker(const char* desc) {
 }
 
 void JudgeLimiter::Menu() {
+    struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "JudgeLimiter" };
+
     ConfigManager &config = *LR2HackBox::Get().mConfig;
 
     ImGui::Checkbox("Enable", &mIsEnabled);

@@ -314,6 +314,8 @@ static void HelpMarker(const char* desc) {
 }
 
 void MemoryTracker::Menu() {
+	struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "MemoryTracker" };
+
 	LR2::game* game = LR2HackBox::Get().GetGame();
 
 	ImGui::Indent();
