@@ -349,6 +349,8 @@ void TableManager::Gui() {
 	}
 	ImGui::InputText("Symbol", &selectedTable->symbol);
 
+	static float tables_current_y{};
+	static std::optional<float> tables_move_to_this_y;
 	int flags = ImGuiTableFlags(ImGuiTableFlags_ScrollY) | ImGuiTableFlags(ImGuiTableFlags_RowBg)
 		| ImGuiTableFlags(ImGuiTableFlags_BordersOuter) | ImGuiTableFlags(ImGuiTableFlags_Resizable)
 		| ImGuiTableFlags(ImGuiTableFlags_SizingStretchSame) | ImGuiTableFlags(ImGuiTableFlags_Sortable)
@@ -373,11 +375,8 @@ void TableManager::Gui() {
 							bool stringMode = false;
 							int leftLevel{};
 							int rightLevel{};
-
 							if (auto [ptr, ec] = std::from_chars(left.level.data(), left.level.data() + left.level.size(), leftLevel); ec != std::errc()) stringMode = true;
-
 							if (auto [ptr, ec] = std::from_chars(right.level.data(), right.level.data() + right.level.size(), rightLevel); ec != std::errc()) stringMode = true;
-
 							if (stringMode) {
 								if (left.level != right.level)
 									return spec.SortDirection == ImGuiSortDirection_Ascending ? left.level < right.level : left.level > right.level;
@@ -416,6 +415,11 @@ void TableManager::Gui() {
 			ImGui::InputText(levelInputId.c_str(), &entry.level);
 		}
 		if (toDelete != selectedTable->entries.end()) selectedTable->entries.erase(toDelete);
+		if (tables_move_to_this_y) {
+			ImGui::SetScrollY(*tables_move_to_this_y);
+			tables_move_to_this_y.reset();
+		}
+		tables_current_y = ImGui::GetScrollY();
 		ImGui::EndTable();
 	}
 	if (ImGui::Button("Add Song")) {
@@ -424,6 +428,23 @@ void TableManager::Gui() {
 		if (curSong.folderType == 0 && curSong.courseType < 0 && !std::string_view(curSong.hash.body).empty()) {
 			selectedTable->AddEntry("0", curSong.hash.body, s2utf(curSong.fulltitle.body), s2utf(curSong.artist.body));
 			force_resort = true;
+		}
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Find")) {
+		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
+		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
+		std::string_view hash{ curSong.hash.body };
+		auto lineSize = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
+		auto curEntryIdx = std::min(static_cast<size_t>((tables_current_y + lineSize / 2) / lineSize), selectedTable->entries.size());
+		// Doesn't work at the bottom of the list but whatever as that would require calculating lots of viewport things because ImGui lacks API to manipulate viewport position within table.
+		auto it = std::ranges::find(selectedTable->entries.begin() + curEntryIdx + 1, selectedTable->entries.end(), hash, &Entry::md5);
+		if (it == selectedTable->entries.end()) {
+			it = std::ranges::find(selectedTable->entries.begin(), selectedTable->entries.begin() + curEntryIdx, hash, &Entry::md5);
+		}
+		if (it != selectedTable->entries.end()) {
+			auto idxToMoveTo = std::distance(selectedTable->entries.begin(), it);
+			tables_move_to_this_y = idxToMoveTo * lineSize;
 		}
 	}
 
@@ -509,6 +530,7 @@ void TableManager::Menu() {
 				"To create a table, select 'NEW TABLE' at the top of table selector dropdown, specify its name and symbol, and press 'Save' button. If it succeeds, a new table will be available in the selector. Table won't be created if a table with same name already exists, or if the table folder with same name already exists in the output path.\n\n"
 				"No changes to the table are written to its files before you press the 'Save' button.\n\n"
 				"To add a song, hover over it in the LR2 song select wheel and press 'Add Song' button. It will appear in the list, and its level can be edited in the box right of its name. Song can be removed from the table with a double-click on its name.\n\n"
+				"'Find' button scrolls to the next closest entry for the currently selected song.\n\n"
 				"'Delete' button permanently deletes the table and its files. A confirmation is required after pressing it.\n\n"
 				"'Reload' button reloads the contents of the current output path, resetting any unsaved changes to the tables.\n\n"
 				"Table song list can be sorted by pressing the column header. If you want two-level sort, you can hold shift and click the second column header to sort against.\n\n"

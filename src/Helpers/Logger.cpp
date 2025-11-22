@@ -10,9 +10,8 @@ void Logger::LogOut(std::string buffer) {
     std::time_t timeStamp = std::time(NULL);
     logFile << std::put_time(std::localtime(&timeStamp), "%D %T ") << buffer;
     logFile << std::endl << std::endl;
-    logFile.close();
 }
 
 void Logger::SetPath(std::string path) {
-    mLogPath = path;
+    mLogPath = std::move(path);
 }
