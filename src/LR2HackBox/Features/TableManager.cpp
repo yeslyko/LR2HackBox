@@ -67,6 +67,10 @@ void TableManager::Table::WriteFile() {
 	TableManager& manager = *(TableManager*)LR2HackBox::Get().mTableManager.get();
 	if (!std::filesystem::exists(path))
 		std::filesystem::create_directories(path);
+
+	auto entries = this->entries;
+	std::ranges::sort(entries, {}, [](const Entry& e) { return std::pair{ e.md5, e.level }; });
+
 	std::ofstream headerFile(path / "header.json");
 	nlohmann::ordered_json header = originalJson;
 	header["name"] = name;
