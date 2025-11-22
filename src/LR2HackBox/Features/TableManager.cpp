@@ -62,7 +62,7 @@ void TableManager::Table::AddEntry(std::string level, std::string md5, std::stri
     AddEntry(level, md5, title, artist, originalJson);
 }
 void TableManager::Table::AddEntry(std::string level, std::string md5, std::string title, std::string artist, nlohmann::ordered_json originalJson) {
-    if (!std::ranges::contains(entries, md5, &Entry::md5)) entries.emplace_back(std::move(level), std::move(md5), std::move(title), std::move(artist), std::move(originalJson));
+	entries.emplace_back(std::move(level), std::move(md5), std::move(title), std::move(artist), std::move(originalJson));
 }
 
 void TableManager::Table::WriteFile() {
