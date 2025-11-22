@@ -376,9 +376,7 @@ void Unrandomizer::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("R-Random cyclically shifts the columns by a random amount, as well as has a chance to mirror them\n\nOnly this or random trainer can be enabled at a time");
-	ImGui::Checkbox("##unrandomizer_isSeed", &mIsSeeded);
-	ImGui::SameLine();
-	ImGui::TextUnformatted("Force Seed:");
+	ImGui::Checkbox("Force Seed:", &mIsSeeded);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(ImGui::CalcTextSize("32767X").x);
 	if (ImGui::InputInt("##unrandomizer_seed", &mSeed, 0)) {
