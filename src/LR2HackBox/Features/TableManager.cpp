@@ -43,7 +43,10 @@ TableManager::Entry::Entry(std::string level, std::string md5, std::string title
 		std::string dbSubtitle;
 		Misc::SqliteGetColumn(&dbTitle, std::format("SELECT title FROM song WHERE hash = '{}'", Entry::md5), 0);
 		Misc::SqliteGetColumn(&dbSubtitle, std::format("SELECT subtitle FROM song WHERE hash = '{}'", Entry::md5), 0);
-		Entry::title = s2utf(std::format("{} {}", dbTitle, dbSubtitle));
+		if (dbSubtitle.empty())
+			Entry::title = s2utf(dbTitle);
+		else // IDC whitespace
+			Entry::title = s2utf(std::format("{} {}", dbTitle, dbSubtitle));
 	}
 	if (Entry::artist.empty()) {
 		std::string dbArtist;
