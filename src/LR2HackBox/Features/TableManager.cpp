@@ -247,6 +247,7 @@ static void HelpMarker(const char* desc) {
 }
 
 void TableManager::Gui() {
+	struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "TableManager" };
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 	if (mOutputIdx < 0) {
 		ImGui::TextUnformatted("Select output to proceed...");
@@ -494,6 +495,8 @@ void TableManager::Gui() {
 }
 
 void TableManager::Menu() {
+	struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "TableManager" };
+
 	static bool showReadme = false;
 	if (ImGui::Button("README")) showReadme = true;
 	if (showReadme) {

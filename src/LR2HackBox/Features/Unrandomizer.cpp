@@ -328,6 +328,8 @@ void Unrandomizer::MirrorOrder() {
 }
 
 void Unrandomizer::Menu() {
+	struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "Unradomizer" };
+
 	LR2::game* game = LR2HackBox::Get().GetGame();
 	if (game->sSelect.metaSelected.keymode != 0 && game->sSelect.metaSelected.keymode != 7 && game->sSelect.metaSelected.keymode != 5) {
 		ImGui::TextUnformatted("Only 7K and 5K mode is currently implemented.");

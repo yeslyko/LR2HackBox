@@ -354,6 +354,8 @@ static void HelpMarker(const char* desc) {
 }
 
 void ScoreCannon::Menu() {
+	struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "ScoreCannon" };
+
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 
 	char discordName[64];
