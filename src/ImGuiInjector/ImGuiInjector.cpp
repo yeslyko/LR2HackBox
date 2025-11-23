@@ -5,6 +5,7 @@
 
 #include "Helpers/Helpers.hpp"
 #include "imgui/imgui.h"
+#include <imgui_internal.h>
 #include "kiero/kiero.h"
 #include "minhook/include/MinHook.h"
 
@@ -282,14 +283,26 @@ void ImGuiInjector::SetStartingStyle(const ImGuiStyle& style) {
     mStartingStyle = style;
 }
 
+void ImGuiInjector::SetCanvasSize(const ImVec2& size) {
+    mCanvasSize = size;
+}
+
 void ImGuiInjector::UpdateGlobalScale() {
-    if (!mScaleChanged) return;
-    mScaleChanged = false;
     ImGuiStyle& style = ImGui::GetStyle();
     ImGuiStyle tmpStyle = mStartingStyle;
-    tmpStyle.ScaleAllSizes(mGlobalScale);
-    tmpStyle.FontScaleMain = mGlobalScale;
-    tmpStyle.MouseCursorScale = mGlobalScale;
+    RECT wndRect;
+    GetWindowRect(mWindowHandle, &wndRect);
+    float scale = mGlobalScale;
+    if (mCanvasSize.y > 0) scale *= static_cast<float>(wndRect.bottom - wndRect.top) / mCanvasSize.y;
+    static float lastScale = scale;
+    if (std::abs(scale - lastScale) < std::numeric_limits<float>::epsilon()) return;
+    for (const auto& viewport : ImGui::GetCurrentContext()->Viewports) {
+        ImGui::ScaleWindowsInViewport(viewport, scale / lastScale);
+    }
+    lastScale = scale;
+    tmpStyle.ScaleAllSizes(scale);
+    tmpStyle.FontScaleMain = scale;
+    tmpStyle.MouseCursorScale = scale;
 
     style.WindowPadding = tmpStyle.WindowPadding;
     style.WindowRounding = tmpStyle.WindowRounding;
@@ -324,6 +337,5 @@ void ImGuiInjector::UpdateGlobalScale() {
 }
 
 void ImGuiInjector::SetGlobalScale(float scale) {
-    mScaleChanged = mGlobalScale != scale;
     mGlobalScale = scale;
 }

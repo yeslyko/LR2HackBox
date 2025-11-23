@@ -20,6 +20,7 @@ public:
 	void UpdateInput();
 	void LoadJapaneseFont();
 	void SetStartingStyle(const ImGuiStyle& style);
+	void SetCanvasSize(const ImVec2& size);
 	void SetGlobalScale(float scale);
 	void UpdateGlobalScale();
 private:
@@ -38,9 +39,10 @@ private:
 	LONG_PTR mWndProcPtr = NULL;
 	WNDPROC mPreviousWndProc = nullptr;
 
+	ImVec2 mCanvasSize = { 0.f, 0.f };
+
 	ImGuiStyle mStartingStyle;
 	float mGlobalScale = 1.f;
-	bool mScaleChanged = false;
 
 	std::vector<ImGuiMenu*> mMenus;
 };
