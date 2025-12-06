@@ -351,6 +351,31 @@ void TableManager::Gui() {
 
 	static float tables_current_y{};
 	static std::optional<float> tables_move_to_this_y;
+	auto do_add = []{
+		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
+		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
+		if (curSong.folderType == 0 && curSong.courseType < 0 && !std::string_view(curSong.hash.body).empty()) {
+			selectedTable->AddEntry("0", curSong.hash.body, s2utf(curSong.fulltitle.body), s2utf(curSong.artist.body));
+			force_resort = true;
+		}
+	};
+	auto do_find = []{
+		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
+		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
+		std::string_view hash{ curSong.hash.body };
+		// FIXME: invalid line size calculated. Try changing the scale in the GUI.
+		auto lineSize = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
+		auto nextEntryIdx = std::min(static_cast<size_t>((tables_current_y + lineSize / 2) / lineSize) + 1, selectedTable->entries.size());
+		// Doesn't work at the bottom of the list but whatever as that would require calculating lots of viewport things because ImGui lacks API to manipulate viewport position within table.
+		auto it = std::ranges::find(selectedTable->entries.begin() + nextEntryIdx, selectedTable->entries.end(), hash, &Entry::md5);
+		if (it == selectedTable->entries.end()) {
+			it = std::ranges::find(selectedTable->entries.begin(), selectedTable->entries.begin() + (nextEntryIdx - 1), hash, &Entry::md5);
+		}
+		if (it != selectedTable->entries.end()) {
+			auto idxToMoveTo = std::distance(selectedTable->entries.begin(), it);
+			tables_move_to_this_y = idxToMoveTo * lineSize;
+		}
+	};
 	int flags = ImGuiTableFlags(ImGuiTableFlags_ScrollY) | ImGuiTableFlags(ImGuiTableFlags_RowBg)
 		| ImGuiTableFlags(ImGuiTableFlags_BordersOuter) | ImGuiTableFlags(ImGuiTableFlags_Resizable)
 		| ImGuiTableFlags(ImGuiTableFlags_SizingStretchSame) | ImGuiTableFlags(ImGuiTableFlags_Sortable)
@@ -423,30 +448,12 @@ void TableManager::Gui() {
 		ImGui::EndTable();
 	}
 	if (ImGui::Button("Add Song")) {
-		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
-		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
-		if (curSong.folderType == 0 && curSong.courseType < 0 && !std::string_view(curSong.hash.body).empty()) {
-			selectedTable->AddEntry("0", curSong.hash.body, s2utf(curSong.fulltitle.body), s2utf(curSong.artist.body));
-			force_resort = true;
-		}
+		do_add();
+		do_find();
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Find") && !selectedTable->entries.empty()) {
-		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
-		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
-		std::string_view hash{ curSong.hash.body };
-		// FIXME: invalid line size calculated. Try changing the scale in the GUI.
-		auto lineSize = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
-		auto nextEntryIdx = std::min(static_cast<size_t>((tables_current_y + lineSize / 2) / lineSize) + 1, selectedTable->entries.size());
-		// Doesn't work at the bottom of the list but whatever as that would require calculating lots of viewport things because ImGui lacks API to manipulate viewport position within table.
-		auto it = std::ranges::find(selectedTable->entries.begin() + nextEntryIdx, selectedTable->entries.end(), hash, &Entry::md5);
-		if (it == selectedTable->entries.end()) {
-			it = std::ranges::find(selectedTable->entries.begin(), selectedTable->entries.begin() + (nextEntryIdx - 1), hash, &Entry::md5);
-		}
-		if (it != selectedTable->entries.end()) {
-			auto idxToMoveTo = std::distance(selectedTable->entries.begin(), it);
-			tables_move_to_this_y = idxToMoveTo * lineSize;
-		}
+		do_find();
 	}
 
 	if (ImGui::Button("Save")) {
