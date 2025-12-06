@@ -431,16 +431,16 @@ void TableManager::Gui() {
 		}
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Find")) {
+	if (ImGui::Button("Find") && !selectedTable->entries.empty()) {
 		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
 		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
 		std::string_view hash{ curSong.hash.body };
 		auto lineSize = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
-		auto curEntryIdx = std::min(static_cast<size_t>((tables_current_y + lineSize / 2) / lineSize), selectedTable->entries.size());
+		auto nextEntryIdx = std::min(static_cast<size_t>((tables_current_y + lineSize / 2) / lineSize) + 1, selectedTable->entries.size());
 		// Doesn't work at the bottom of the list but whatever as that would require calculating lots of viewport things because ImGui lacks API to manipulate viewport position within table.
-		auto it = std::ranges::find(selectedTable->entries.begin() + curEntryIdx + 1, selectedTable->entries.end(), hash, &Entry::md5);
+		auto it = std::ranges::find(selectedTable->entries.begin() + nextEntryIdx, selectedTable->entries.end(), hash, &Entry::md5);
 		if (it == selectedTable->entries.end()) {
-			it = std::ranges::find(selectedTable->entries.begin(), selectedTable->entries.begin() + curEntryIdx, hash, &Entry::md5);
+			it = std::ranges::find(selectedTable->entries.begin(), selectedTable->entries.begin() + (nextEntryIdx - 1), hash, &Entry::md5);
 		}
 		if (it != selectedTable->entries.end()) {
 			auto idxToMoveTo = std::distance(selectedTable->entries.begin(), it);
