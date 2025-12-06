@@ -349,14 +349,42 @@ void TableManager::Gui() {
 	}
 	ImGui::InputText("Symbol", &selectedTable->symbol);
 
-	static float tables_current_y{};
-	static std::optional<float> tables_move_to_this_y;
-	int flags = ImGuiTableFlags(ImGuiTableFlags_ScrollY) | ImGuiTableFlags(ImGuiTableFlags_RowBg)
+	static std::optional<ptrdiff_t> tables_current_bottom_idx;
+	static std::optional<ptrdiff_t> tables_move_to_this_idx;
+	auto do_add = []{
+		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
+		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
+		if (curSong.folderType == 0 && curSong.courseType < 0 && !std::string_view(curSong.hash.body).empty()) {
+			selectedTable->AddEntry("0", curSong.hash.body, s2utf(curSong.fulltitle.body), s2utf(curSong.artist.body));
+			force_resort = true;
+		}
+	};
+	auto do_find = []{
+		if (!tables_current_bottom_idx.has_value()) {
+			return;
+		}
+		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
+		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
+		std::string_view hash{ curSong.hash.body };
+		auto nextEntryIdx = std::min(static_cast<size_t>(*tables_current_bottom_idx + 1), selectedTable->entries.size());
+		auto it = std::ranges::find(selectedTable->entries.begin() + nextEntryIdx, selectedTable->entries.end(), hash, &Entry::md5);
+		if (it == selectedTable->entries.end()) {
+			it = std::ranges::find(selectedTable->entries.begin(), selectedTable->entries.begin() + (nextEntryIdx - 1), hash, &Entry::md5);
+			if (it == selectedTable->entries.begin() + (nextEntryIdx - 1) /*sub-end*/) {
+				it = selectedTable->entries.end();
+			}
+		}
+		if (it != selectedTable->entries.end()) {
+			tables_move_to_this_idx = std::distance(selectedTable->entries.begin(), it);
+		}
+	};
+	constexpr int flags = ImGuiTableFlags(ImGuiTableFlags_ScrollY) | ImGuiTableFlags(ImGuiTableFlags_RowBg)
 		| ImGuiTableFlags(ImGuiTableFlags_BordersOuter) | ImGuiTableFlags(ImGuiTableFlags_Resizable)
 		| ImGuiTableFlags(ImGuiTableFlags_SizingStretchSame) | ImGuiTableFlags(ImGuiTableFlags_Sortable)
 		| ImGuiTableFlags(ImGuiTableFlags_SortTristate) | ImGuiTableFlags(ImGuiTableFlags_SortMulti);
-	ImVec2 tableSize = { 0, std::max(1.f, ImGui::GetWindowHeight() - ImGui::GetStyle().WindowPadding.y - ImGui::GetCursorPosY() - ImGui::GetFrameHeightWithSpacing() * 3) };
-	if (ImGui::BeginTable("TableManagerTable", 2, flags, tableSize)) {
+	const auto tableHeightForWindowSize = ImGui::GetWindowHeight() - ImGui::GetStyle().WindowPadding.y - ImGui::GetCursorPosY() - ImGui::GetFrameHeightWithSpacing() * 3;
+	const auto tableRowHeightRough = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
+	if (ImGui::BeginTable("TableManagerTable", 2, flags, { 0., std::max(tableRowHeightRough * 3, tableHeightForWindowSize) })) {
 		ImGui::TableSetupScrollFreeze(0, 1);
 		ImGui::TableSetupColumn("Title");
 		ImGui::TableSetupColumn("Level");
@@ -394,12 +422,17 @@ void TableManager::Gui() {
 				force_resort = false;
 			}
 		}
+		tables_current_bottom_idx.reset();
 		auto toDelete = selectedTable->entries.end();
 		for (auto it = selectedTable->entries.begin(); it != selectedTable->entries.end(); it++) {
 			auto& entry = *it;
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::TextUnformatted(entry.title.empty() ? entry.md5.c_str() : entry.title.c_str());
+
+			if (ImGui::IsItemVisible()) {
+				tables_current_bottom_idx = it - selectedTable->entries.begin();
+			}
 
 			if (ImGui::IsItemHovered()) {
 				ImGui::TableSetBgColor(ImGuiTableBgTarget(ImGuiTableBgTarget_CellBg), IM_COL32(110, 90, 20, 255));
@@ -413,39 +446,22 @@ void TableManager::Gui() {
 
 			std::string levelInputId = "##level" + sRowIdx;
 			ImGui::InputText(levelInputId.c_str(), &entry.level);
+
+			if (it - selectedTable->entries.begin() == tables_move_to_this_idx) {
+				ImGui::SetScrollHereY(0.f);
+				tables_move_to_this_idx.reset();
+			}
 		}
 		if (toDelete != selectedTable->entries.end()) selectedTable->entries.erase(toDelete);
-		if (tables_move_to_this_y) {
-			ImGui::SetScrollY(*tables_move_to_this_y);
-			tables_move_to_this_y.reset();
-		}
-		tables_current_y = ImGui::GetScrollY();
 		ImGui::EndTable();
 	}
 	if (ImGui::Button("Add Song")) {
-		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
-		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
-		if (curSong.folderType == 0 && curSong.courseType < 0 && !std::string_view(curSong.hash.body).empty()) {
-			selectedTable->AddEntry("0", curSong.hash.body, s2utf(curSong.fulltitle.body), s2utf(curSong.artist.body));
-			force_resort = true;
-		}
+		do_add();
+		do_find();
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Find")) {
-		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
-		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
-		std::string_view hash{ curSong.hash.body };
-		auto lineSize = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
-		auto curEntryIdx = std::min(static_cast<size_t>((tables_current_y + lineSize / 2) / lineSize), selectedTable->entries.size());
-		// Doesn't work at the bottom of the list but whatever as that would require calculating lots of viewport things because ImGui lacks API to manipulate viewport position within table.
-		auto it = std::ranges::find(selectedTable->entries.begin() + curEntryIdx + 1, selectedTable->entries.end(), hash, &Entry::md5);
-		if (it == selectedTable->entries.end()) {
-			it = std::ranges::find(selectedTable->entries.begin(), selectedTable->entries.begin() + curEntryIdx, hash, &Entry::md5);
-		}
-		if (it != selectedTable->entries.end()) {
-			auto idxToMoveTo = std::distance(selectedTable->entries.begin(), it);
-			tables_move_to_this_y = idxToMoveTo * lineSize;
-		}
+	if (ImGui::Button("Find") && !selectedTable->entries.empty()) {
+		do_find();
 	}
 
 	if (ImGui::Button("Save")) {

@@ -45,7 +45,7 @@ BOOL APIENTRY DllMain(
         AllocConsole();
         freopen_s(&console_thread, "CONOUT$", "w", stdout);
 
-        std::cout << "Debug Console Attached" << std::endl;
+        std::cout << "Go attach a debugger now!\n" << std::flush;
 
         while (!IsDebuggerPresent())
             Sleep(100);
