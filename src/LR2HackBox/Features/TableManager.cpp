@@ -349,7 +349,7 @@ void TableManager::Gui() {
 	}
 	ImGui::InputText("Symbol", &selectedTable->symbol);
 
-	static float tables_current_y{};
+	static std::optional<ptrdiff_t> tables_current_bottom_idx;
 	static std::optional<ptrdiff_t> tables_move_to_this_idx;
 	auto do_add = []{
 		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
@@ -360,13 +360,13 @@ void TableManager::Gui() {
 		}
 	};
 	auto do_find = []{
+		if (!tables_current_bottom_idx.has_value()) {
+			return;
+		}
 		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
 		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
 		std::string_view hash{ curSong.hash.body };
-		// FIXME: invalid line size calculated. Try changing the scale in the GUI.
-		auto lineSize = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
-		auto nextEntryIdx = std::min(static_cast<size_t>((tables_current_y + lineSize / 2) / lineSize) + 1, selectedTable->entries.size());
-		// Doesn't work at the bottom of the list but whatever as that would require calculating lots of viewport things because ImGui lacks API to manipulate viewport position within table.
+		auto nextEntryIdx = std::min(static_cast<size_t>(*tables_current_bottom_idx + 1), selectedTable->entries.size());
 		auto it = std::ranges::find(selectedTable->entries.begin() + nextEntryIdx, selectedTable->entries.end(), hash, &Entry::md5);
 		if (it == selectedTable->entries.end()) {
 			it = std::ranges::find(selectedTable->entries.begin(), selectedTable->entries.begin() + (nextEntryIdx - 1), hash, &Entry::md5);
@@ -421,12 +421,17 @@ void TableManager::Gui() {
 				force_resort = false;
 			}
 		}
+		tables_current_bottom_idx.reset();
 		auto toDelete = selectedTable->entries.end();
 		for (auto it = selectedTable->entries.begin(); it != selectedTable->entries.end(); it++) {
 			auto& entry = *it;
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::TextUnformatted(entry.title.empty() ? entry.md5.c_str() : entry.title.c_str());
+
+			if (ImGui::IsItemVisible()) {
+				tables_current_bottom_idx = it - selectedTable->entries.begin();
+			}
 
 			if (ImGui::IsItemHovered()) {
 				ImGui::TableSetBgColor(ImGuiTableBgTarget(ImGuiTableBgTarget_CellBg), IM_COL32(110, 90, 20, 255));
@@ -447,7 +452,6 @@ void TableManager::Gui() {
 			}
 		}
 		if (toDelete != selectedTable->entries.end()) selectedTable->entries.erase(toDelete);
-		tables_current_y = ImGui::GetScrollY();
 		ImGui::EndTable();
 	}
 	if (ImGui::Button("Add Song")) {
