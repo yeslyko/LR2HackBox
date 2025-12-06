@@ -378,12 +378,13 @@ void TableManager::Gui() {
 			tables_move_to_this_idx = std::distance(selectedTable->entries.begin(), it);
 		}
 	};
-	int flags = ImGuiTableFlags(ImGuiTableFlags_ScrollY) | ImGuiTableFlags(ImGuiTableFlags_RowBg)
+	constexpr int flags = ImGuiTableFlags(ImGuiTableFlags_ScrollY) | ImGuiTableFlags(ImGuiTableFlags_RowBg)
 		| ImGuiTableFlags(ImGuiTableFlags_BordersOuter) | ImGuiTableFlags(ImGuiTableFlags_Resizable)
 		| ImGuiTableFlags(ImGuiTableFlags_SizingStretchSame) | ImGuiTableFlags(ImGuiTableFlags_Sortable)
 		| ImGuiTableFlags(ImGuiTableFlags_SortTristate) | ImGuiTableFlags(ImGuiTableFlags_SortMulti);
-	ImVec2 tableSize = { 0, std::max(1.f, ImGui::GetWindowHeight() - ImGui::GetStyle().WindowPadding.y - ImGui::GetCursorPosY() - ImGui::GetFrameHeightWithSpacing() * 3) };
-	if (ImGui::BeginTable("TableManagerTable", 2, flags, tableSize)) {
+	const auto tableHeightForWindowSize = ImGui::GetWindowHeight() - ImGui::GetStyle().WindowPadding.y - ImGui::GetCursorPosY() - ImGui::GetFrameHeightWithSpacing() * 3;
+	const auto tableRowHeightRough = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
+	if (ImGui::BeginTable("TableManagerTable", 2, flags, { 0., std::max(tableRowHeightRough * 3, tableHeightForWindowSize) })) {
 		ImGui::TableSetupScrollFreeze(0, 1);
 		ImGui::TableSetupColumn("Title");
 		ImGui::TableSetupColumn("Level");
