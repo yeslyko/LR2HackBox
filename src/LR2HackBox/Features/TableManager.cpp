@@ -370,6 +370,9 @@ void TableManager::Gui() {
 		auto it = std::ranges::find(selectedTable->entries.begin() + nextEntryIdx, selectedTable->entries.end(), hash, &Entry::md5);
 		if (it == selectedTable->entries.end()) {
 			it = std::ranges::find(selectedTable->entries.begin(), selectedTable->entries.begin() + (nextEntryIdx - 1), hash, &Entry::md5);
+			if (it == selectedTable->entries.begin() + (nextEntryIdx - 1) /*sub-end*/) {
+				it = selectedTable->entries.end();
+			}
 		}
 		if (it != selectedTable->entries.end()) {
 			tables_move_to_this_idx = std::distance(selectedTable->entries.begin(), it);
