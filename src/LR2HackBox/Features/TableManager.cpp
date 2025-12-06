@@ -435,6 +435,7 @@ void TableManager::Gui() {
 		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
 		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
 		std::string_view hash{ curSong.hash.body };
+		// FIXME: invalid line size calculated. Try changing the scale in the GUI.
 		auto lineSize = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
 		auto nextEntryIdx = std::min(static_cast<size_t>((tables_current_y + lineSize / 2) / lineSize) + 1, selectedTable->entries.size());
 		// Doesn't work at the bottom of the list but whatever as that would require calculating lots of viewport things because ImGui lacks API to manipulate viewport position within table.
