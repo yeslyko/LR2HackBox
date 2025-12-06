@@ -350,7 +350,7 @@ void TableManager::Gui() {
 	ImGui::InputText("Symbol", &selectedTable->symbol);
 
 	static float tables_current_y{};
-	static std::optional<float> tables_move_to_this_y;
+	static std::optional<ptrdiff_t> tables_move_to_this_idx;
 	auto do_add = []{
 		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
 		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
@@ -372,8 +372,7 @@ void TableManager::Gui() {
 			it = std::ranges::find(selectedTable->entries.begin(), selectedTable->entries.begin() + (nextEntryIdx - 1), hash, &Entry::md5);
 		}
 		if (it != selectedTable->entries.end()) {
-			auto idxToMoveTo = std::distance(selectedTable->entries.begin(), it);
-			tables_move_to_this_y = idxToMoveTo * lineSize;
+			tables_move_to_this_idx = std::distance(selectedTable->entries.begin(), it);
 		}
 	};
 	int flags = ImGuiTableFlags(ImGuiTableFlags_ScrollY) | ImGuiTableFlags(ImGuiTableFlags_RowBg)
@@ -438,12 +437,13 @@ void TableManager::Gui() {
 
 			std::string levelInputId = "##level" + sRowIdx;
 			ImGui::InputText(levelInputId.c_str(), &entry.level);
+
+			if (it - selectedTable->entries.begin() == tables_move_to_this_idx) {
+				ImGui::SetScrollHereY(0.f);
+				tables_move_to_this_idx.reset();
+			}
 		}
 		if (toDelete != selectedTable->entries.end()) selectedTable->entries.erase(toDelete);
-		if (tables_move_to_this_y) {
-			ImGui::SetScrollY(*tables_move_to_this_y);
-			tables_move_to_this_y.reset();
-		}
 		tables_current_y = ImGui::GetScrollY();
 		ImGui::EndTable();
 	}
