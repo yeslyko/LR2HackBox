@@ -296,9 +296,13 @@ void ImGuiInjector::UpdateGlobalScale() {
     if (mCanvasSize.y > 0) scale *= static_cast<float>(wndRect.bottom - wndRect.top) / mCanvasSize.y;
     static float lastScale = scale;
     if (std::abs(scale - lastScale) < std::numeric_limits<float>::epsilon()) return;
+    static bool firstRun = true;
+    if (!firstRun) {
     for (const auto& viewport : ImGui::GetCurrentContext()->Viewports) {
         ImGui::ScaleWindowsInViewport(viewport, scale / lastScale);
     }
+    }
+    firstRun = false;
     lastScale = scale;
     tmpStyle.ScaleAllSizes(scale);
     tmpStyle.FontScaleMain = scale;
