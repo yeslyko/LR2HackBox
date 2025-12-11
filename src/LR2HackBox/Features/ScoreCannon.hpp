@@ -75,11 +75,13 @@ public:
 	bool mAlreadySent = false;
 
 private:
-	enum MessageFormat {
+	enum class MessageFormat {
 		LAMP_ONLY,
 		COMPACT,
 		FULL
 	};
+	static std::string MessageFormatToString(MessageFormat format);
+	static MessageFormat StringToMessageFormat(std::string_view string);
 	std::string GetJsonString(const Score& score);
 
 	std::vector<SafetyHookMid> mMidHooks;
@@ -88,5 +90,5 @@ private:
 	std::string mGameName;
 	std::vector<std::string> mUrls;
 	std::string mEditingUrl;
-	MessageFormat mMessageFormat = FULL;
+	MessageFormat mMessageFormat = MessageFormat::FULL;
 };

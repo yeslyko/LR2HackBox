@@ -212,42 +212,38 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 	};
 
 	switch (mMessageFormat) {
-	case COMPACT: {
+	case MessageFormat::COMPACT: {
 		data["embeds"][0]["description"] = std::format(
-			"**DJ LEVEL:** {}\n"
-			"**EX SCORE:** {}\n"
-			"**BP:** {}\n"
-			"**IR RANK:** {}\n"
-			"**ARRANGE:** {}",
-			std::format("**{}** ({:.2f}%) {}", // DJ LEVEL
-				GetExGradeDelta(score.exScore, score.exScoreMax),
-				GetExPercentage(score.exScore, score.exScoreMax),
-				GetDeltaNotation(GetExGrade(score.exScore, score.exScoreMax), GetExGrade(score.exScoreBest, score.exScoreMax))
-			),
-			std::format("**{}** ({}) {}", // EX SCORE
-				score.exScore,
-				GetDelta(score.exScore, score.exScoreBest),
-				GetDeltaNotation(score.exScore, score.exScoreBest)
-			),
-			std::format("**{}** ({}) {}", // BP
-				score.missCount,
-				GetDelta(score.missCount, score.missCountBest),
-				GetDeltaNotation(score.missCountBest, score.missCount)
-			),
-			std::format("**{}/{}** ({}) {}", // IR RANK
-				score.irPosition,
-				score.irCount,
-				GetDelta(score.irPosition, score.irPositionBest),
-				GetDeltaNotation(score.irPositionBest, score.irPosition)
-			),
+			"**DJ LEVEL: {}** ({:.2f}%) {}\n"
+			"**EX SCORE: {}** ({}) {}\n"
+			"**BP: {}** ({}) {}\n"
+			"**IR RANK: {}/{}** ({}) {}\n"
+			"**ARRANGE: {}** ({})",
+			// DJ LEVEL
+			GetExGradeDelta(score.exScore, score.exScoreMax),
+			GetExPercentage(score.exScore, score.exScoreMax),
+			GetDeltaNotation(GetExGrade(score.exScore, score.exScoreMax), GetExGrade(score.exScoreBest, score.exScoreMax)),
+			// EX SCORE
+			score.exScore,
+			GetDelta(score.exScore, score.exScoreBest),
+			GetDeltaNotation(score.exScore, score.exScoreBest),
+			// BP
+			score.missCount,
+			GetDelta(score.missCount, score.missCountBest),
+			GetDeltaNotation(score.missCountBest, score.missCount),
+			// IR RANK
+			score.irPosition,
+			score.irCount,
+			GetDelta(score.irPosition, score.irPositionBest),
+			GetDeltaNotation(score.irPositionBest, score.irPosition),
 			// ARRANGE
 			score.random == Score::Random::NONRAN || score.random == Score::Random::MIRROR || score.random == Score::Random::RANDOM ?
-			std::format("**{}** ({})", score.arrange, score.rseed) :
-			std::format("**{}** ({})", randoms[score.random], score.rseed)
+			score.arrange : randoms[score.random], 
+			score.rseed
 		);
 		break;
 	}
-	case FULL: {
+	case MessageFormat::FULL: {
 		data["embeds"][0]["fields"] = {
 			{
 				{"name", std::format("Arrange: {}", randoms[score.random])},
@@ -280,7 +276,6 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 			}
 		};
 		break;
-	default: break;
 	}
 	}
 	return data.dump(4);
@@ -288,7 +283,7 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 
 bool ScoreCannon::PostScore(const Score& score, const std::string& screenshotPath) {
 	std::string data = GetJsonString(score);
-#if _DEBUG
+#ifdef _DEBUG
 	{
 		std::println("{}", data);
 		fflush(stdout);
@@ -372,11 +367,25 @@ ScoreCannon::Score::Score(void* g) {
 	irCount = game.net.rankingData.rankingCount;
 }
 
+std::string ScoreCannon::MessageFormatToString(ScoreCannon::MessageFormat format) {
+	switch (format) {
+	case MessageFormat::LAMP_ONLY: return "LAMP_ONLY";
+	case MessageFormat::COMPACT: return "COMPACT";
+	case MessageFormat::FULL: return "FULL";
+	}
+}
+
+ScoreCannon::MessageFormat ScoreCannon::StringToMessageFormat(std::string_view string) {
+	if (string == MessageFormatToString(MessageFormat::LAMP_ONLY)) return MessageFormat::LAMP_ONLY;
+	if (string == MessageFormatToString(MessageFormat::COMPACT)) return MessageFormat::COMPACT;
+	return MessageFormat::FULL;
+}
+
 bool ScoreCannon::Init(uintptr_t moduleBase) {
 	ScoreCannon::mModuleBase = moduleBase;
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 	mIsEnabled = config.ReadValue("bIsScoreCannon", mIsEnabled);
-	mMessageFormat = static_cast<MessageFormat>(config.ReadValue("iScoreCannonFormat", (int)mMessageFormat));
+	mMessageFormat = StringToMessageFormat(config.ReadValue("sScoreCannonFormat", MessageFormatToString(mMessageFormat)));
 	mDiscordName = config.ReadValue("sScoreCannonDiscordName", mDiscordName);
 	mDiscordAvatarUrl = config.ReadValue("sScoreCannonDiscordAvatarUrl", mDiscordAvatarUrl);
 	config.ReadArray("sScoreCannonDiscordWebhookUrls", mUrls);
@@ -424,18 +433,21 @@ void ScoreCannon::Menu() {
 	HelpMarker("When enabled, sends score textcards to specified Discord webhooks, if screenshot is taken on result screen");
 
 	bool formatChanged = false;
-	if (ImGui::RadioButton("Lamp only", (int*)&mMessageFormat, LAMP_ONLY)) {
+	using MessageFormat_t = std::underlying_type_t<MessageFormat>;
+	if (ImGui::RadioButton("Lamp only", reinterpret_cast<MessageFormat_t*>(&mMessageFormat), static_cast<MessageFormat_t>(MessageFormat::LAMP_ONLY))) {
 		formatChanged = true;
 	}
 	ImGui::SameLine();
-	if (ImGui::RadioButton("Compact", (int*)&mMessageFormat, COMPACT)) {
+	if (ImGui::RadioButton("Compact", reinterpret_cast<MessageFormat_t*>(&mMessageFormat), static_cast<MessageFormat_t>(MessageFormat::COMPACT))) {
 		formatChanged = true;
 	}
 	ImGui::SameLine();
-	if (ImGui::RadioButton("Full", (int*)&mMessageFormat, FULL)) {
+	if (ImGui::RadioButton("Full", reinterpret_cast<MessageFormat_t*>(&mMessageFormat), static_cast<MessageFormat_t>(MessageFormat::FULL))) {
 		formatChanged = true;
 	}
-	if (formatChanged) config.WriteValueAndSave("iScoreCannonFormat", (int)mMessageFormat);
+	if (formatChanged) {
+		config.WriteValueAndSave("sScoreCannonFormat", MessageFormatToString(mMessageFormat));
+	}
 
 	if (ImGui::InputText("Discord Name", discordName, sizeof(discordName))) {
 		mDiscordName = discordName;
