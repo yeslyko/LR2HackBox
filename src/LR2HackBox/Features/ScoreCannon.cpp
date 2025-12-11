@@ -184,46 +184,13 @@ static const Grade GetExGrade(const int& exScore, const int& exScoreMax) {
 }
 
 std::string ScoreCannon::GetJsonString(const Score& score) {
-	nlohmann::ordered_json data;
-	data = {
+	nlohmann::ordered_json data = {
 		{"username", mDiscordName},
 		{"avatar_url", mDiscordAvatarUrl},
 		{"embeds", {
 			{
 				{"title", std::format("{} {} {} {}", score.folder, score.title, score.subtitle, lamps[score.lamp])},
-				{"description", GetLampText(score)},
 				{"color", GetLampRGB(score)},
-				{"fields", {
-					{
-						{"name", std::format("Arrange: {}", randoms[score.random])},
-						{"value", score.random == Score::Random::NONRAN || score.random == Score::Random::MIRROR || score.random == Score::Random::RANDOM
-																		  ? std::format("Order: {} ({})", score.arrange, score.rseed)
-																		  : std::format("Seed: {}", score.rseed)
-						}
-					},
-					{
-						{"name", std::format("Rank: {} ({:.2f}%) {}", GetExGradeDelta(score.exScore, score.exScoreMax), GetExPercentage(score.exScore, score.exScoreMax), GetDeltaNotation(GetExGrade(score.exScore, score.exScoreMax), GetExGrade(score.exScoreBest, score.exScoreMax)))},
-						{"value", score.target == Score::Target::PERCENT ? std::format("Target: {:.0f}%, ({})", GetExPercentage(score.exScoreTarget, score.exScoreMax), GetDelta(score.exScore, score.exScoreTarget))
-																		 : std::format("Target: {} ({})", targets[score.target], GetDelta(score.exScore, score.exScoreTarget))
-						}
-					},
-					{
-						{"name", std::format("EX Score: {} {}", score.exScore, GetDeltaNotation(score.exScore, score.exScoreBest))},
-						{"value", std::format("({})", GetDelta(score.exScore, score.exScoreBest))}
-					},
-					{
-						{"name", std::format("Max Combo: {}/{} {}", score.maxCombo, score.exScoreMax / 2, GetDeltaNotation(score.maxCombo, score.maxComboBest))},
-						{"value", std::format("({})", GetDelta(score.maxCombo, score.maxComboBest))}
-					},
-					{
-						{"name", std::format("Miss Count: {} {}", score.missCount, GetDeltaNotation(score.missCountBest, score.missCount))},
-						{"value", std::format("({})", GetDelta(score.missCount, score.missCountBest))}
-					},
-					{
-						{"name", std::format("IR Position: {}/{} {}", score.irPosition, score.irCount, GetDeltaNotation(score.irPositionBest, score.irPosition))},
-						{"value", std::format("({})", GetDelta(score.irPosition, score.irPositionBest))}
-					}
-				}},
 				{"author", {
 					{"name", std::format("{} just got a new score!", mGameName)}
 				}},
@@ -243,11 +210,92 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 			}
 		}}
 	};
-	return data.dump();
+
+	switch (mMessageFormat) {
+	case COMPACT: {
+		data["embeds"][0]["description"] = std::format(
+			"**DJ LEVEL:** {}\n"
+			"**EX SCORE:** {}\n"
+			"**BP:** {}\n"
+			"**IR RANK:** {}\n"
+			"**ARRANGE:** {}",
+			std::format("**{}** ({:.2f}%) {}", // DJ LEVEL
+				GetExGradeDelta(score.exScore, score.exScoreMax),
+				GetExPercentage(score.exScore, score.exScoreMax),
+				GetDeltaNotation(GetExGrade(score.exScore, score.exScoreMax), GetExGrade(score.exScoreBest, score.exScoreMax))
+			),
+			std::format("**{}** ({}) {}", // EX SCORE
+				score.exScore,
+				GetDelta(score.exScore, score.exScoreBest),
+				GetDeltaNotation(score.exScore, score.exScoreBest)
+			),
+			std::format("**{}** ({}) {}", // BP
+				score.missCount,
+				GetDelta(score.missCount, score.missCountBest),
+				GetDeltaNotation(score.missCountBest, score.missCount)
+			),
+			std::format("**{}/{}** ({}) {}", // IR RANK
+				score.irPosition,
+				score.irCount,
+				GetDelta(score.irPosition, score.irPositionBest),
+				GetDeltaNotation(score.irPositionBest, score.irPosition)
+			),
+			// ARRANGE
+			score.random == Score::Random::NONRAN || score.random == Score::Random::MIRROR || score.random == Score::Random::RANDOM ?
+			std::format("**{}** ({})", score.arrange, score.rseed) :
+			std::format("**{}** ({})", randoms[score.random], score.rseed)
+		);
+		break;
+	}
+	case FULL: {
+		data["embeds"][0]["fields"] = {
+			{
+				{"name", std::format("Arrange: {}", randoms[score.random])},
+				{"value", score.random == Score::Random::NONRAN || score.random == Score::Random::MIRROR || score.random == Score::Random::RANDOM
+					? std::format("Order: {} ({})", score.arrange, score.rseed)
+					: std::format("Seed: {}", score.rseed)
+				}
+			},
+			{
+				{"name", std::format("Rank: {} ({:.2f}%) {}", GetExGradeDelta(score.exScore, score.exScoreMax), GetExPercentage(score.exScore, score.exScoreMax), GetDeltaNotation(GetExGrade(score.exScore, score.exScoreMax), GetExGrade(score.exScoreBest, score.exScoreMax)))},
+				{"value", score.target == Score::Target::PERCENT ? std::format("Target: {:.0f}%, ({})", GetExPercentage(score.exScoreTarget, score.exScoreMax), GetDelta(score.exScore, score.exScoreTarget))
+					: std::format("Target: {} ({})", targets[score.target], GetDelta(score.exScore, score.exScoreTarget))
+				}
+			},
+			{
+				{"name", std::format("EX Score: {} {}", score.exScore, GetDeltaNotation(score.exScore, score.exScoreBest))},
+				{"value", std::format("({})", GetDelta(score.exScore, score.exScoreBest))}
+			},
+			{
+				{"name", std::format("Max Combo: {}/{} {}", score.maxCombo, score.exScoreMax / 2, GetDeltaNotation(score.maxCombo, score.maxComboBest))},
+				{"value", std::format("({})", GetDelta(score.maxCombo, score.maxComboBest))}
+			},
+			{
+				{"name", std::format("Miss Count: {} {}", score.missCount, GetDeltaNotation(score.missCountBest, score.missCount))},
+				{"value", std::format("({})", GetDelta(score.missCount, score.missCountBest))}
+			},
+			{
+				{"name", std::format("IR Position: {}/{} {}", score.irPosition, score.irCount, GetDeltaNotation(score.irPositionBest, score.irPosition))},
+				{"value", std::format("({})", GetDelta(score.irPosition, score.irPositionBest))}
+			}
+		};
+		break;
+	default: break;
+	}
+	}
+	return data.dump(4);
 }
 
 bool ScoreCannon::PostScore(const Score& score, const std::string& screenshotPath) {
 	std::string data = GetJsonString(score);
+#if _DEBUG
+	{
+		std::println("{}", data);
+		fflush(stdout);
+		std::ofstream dump("ScoreCannonDump.json");
+		dump << data;
+	}
+#endif
 	for (auto& url : mUrls) {
 		std::thread([url, data, screenshotPath]() {
 			cpr::Response r = cpr::Post(
@@ -328,6 +376,7 @@ bool ScoreCannon::Init(uintptr_t moduleBase) {
 	ScoreCannon::mModuleBase = moduleBase;
 	ConfigManager& config = *LR2HackBox::Get().mConfig;
 	mIsEnabled = config.ReadValue("bIsScoreCannon", mIsEnabled);
+	mMessageFormat = static_cast<MessageFormat>(config.ReadValue("iScoreCannonFormat", (int)mMessageFormat));
 	mDiscordName = config.ReadValue("sScoreCannonDiscordName", mDiscordName);
 	mDiscordAvatarUrl = config.ReadValue("sScoreCannonDiscordAvatarUrl", mDiscordAvatarUrl);
 	config.ReadArray("sScoreCannonDiscordWebhookUrls", mUrls);
@@ -373,6 +422,21 @@ void ScoreCannon::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("When enabled, sends score textcards to specified Discord webhooks, if screenshot is taken on result screen");
+
+	bool formatChanged = false;
+	if (ImGui::RadioButton("Lamp only", (int*)&mMessageFormat, LAMP_ONLY)) {
+		formatChanged = true;
+	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Compact", (int*)&mMessageFormat, COMPACT)) {
+		formatChanged = true;
+	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Full", (int*)&mMessageFormat, FULL)) {
+		formatChanged = true;
+	}
+	if (formatChanged) config.WriteValueAndSave("iScoreCannonFormat", (int)mMessageFormat);
+
 	if (ImGui::InputText("Discord Name", discordName, sizeof(discordName))) {
 		mDiscordName = discordName;
 		config.WriteValueAndSave("sScoreCannonDiscordName", mDiscordName);

@@ -73,7 +73,13 @@ public:
 
 	bool mIsEnabled = false;
 	bool mAlreadySent = false;
+
 private:
+	enum MessageFormat {
+		LAMP_ONLY,
+		COMPACT,
+		FULL
+	};
 	std::string GetJsonString(const Score& score);
 
 	std::vector<SafetyHookMid> mMidHooks;
@@ -82,4 +88,5 @@ private:
 	std::string mGameName;
 	std::vector<std::string> mUrls;
 	std::string mEditingUrl;
+	MessageFormat mMessageFormat = FULL;
 };
