@@ -292,6 +292,7 @@ void ImGuiInjector::UpdateGlobalScale() {
     ImGuiStyle tmpStyle = mStartingStyle;
     RECT wndRect;
     GetClientRect(mWindowHandle, &wndRect);
+    if (wndRect.right - wndRect.left == 0 || wndRect.bottom - wndRect.top == 0) return;
     bool initialRun = mCanvasSize.y > 0 ? false : true;
     float scale = mGlobalScale;
     if (mCanvasSize.y > 0) scale *= static_cast<float>(wndRect.bottom - wndRect.top) / mCanvasSize.y;
