@@ -601,7 +601,7 @@ int Misc::OnSaveDrawScreenToPNG(int x1, int y1, int x2, int y2, const char* File
 	if (game.procSelecter == 5 || game.procSelecter == 13) {
 		ScoreCannon& spammer = *(ScoreCannon*)LR2HackBox::Get().mScoreCannon.get();
 		if (spammer.mIsEnabled && !spammer.mAlreadySent) {
-			ScoreCannon::Score score(&game);
+			ScoreCannon::Score score(game);
 			spammer.PostScore(score, path);
 		}
 	}

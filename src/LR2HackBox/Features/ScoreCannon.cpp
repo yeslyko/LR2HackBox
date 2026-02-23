@@ -191,6 +191,7 @@ std::string ScoreCannon::GetJsonString(const Score& score) {
 			{
 				{"title", std::format("{} {} {} {}", score.folder, score.title, score.subtitle, lamps[score.lamp])},
 				{"color", GetLampRGB(score)},
+				{"url", std::format("http://www.dream-pro.info/~lavalse/LR2IR/search.cgi?mode=ranking&bmsmd5={}", score.md5)},
 				{"author", {
 					{"name", std::format("{} just got a new score!", mGameName)}
 				}},
@@ -317,36 +318,24 @@ bool ScoreCannon::PostScore(const Score& score, const std::string& screenshotPat
 	return true;
 }
 
-ScoreCannon::Score::Score(std::string folder, std::string title, std::string subtitle, Lamp lamp, Lamp lampBest,
-	Target target, Random random, std::string arrange, int rseed,
-	int exScore, int exScoreMax, int exScoreBest, int exScoreTarget,
-	int maxCombo, int maxComboBest, int missCount, int missCountBest, 
-	int irPosition, int irPositionBest, int irCount) :
-	folder(folder), title(title), subtitle(subtitle), lamp(lamp), lampBest(lampBest),
-	target(target), random(random), arrange(arrange), rseed(rseed),
-	exScore(exScore), exScoreMax(exScoreMax), exScoreBest(exScoreBest), exScoreTarget(exScoreTarget),
-	maxCombo(maxCombo), maxComboBest(maxComboBest), missCount(missCount), missCountBest(missCountBest), 
-	irPosition(irPosition), irPositionBest(irPositionBest), irCount(irCount) {
-
-}
-
-ScoreCannon::Score::Score(void* g) {
-	LR2::game& game = *(LR2::game*)g;
-
+ScoreCannon::Score::Score(const LR2::game& game) {
 	folder = s2utf(game.sSelect.stack_searchTitle[game.sSelect.cur].body);
 	if (game.gameplay.courseType == 0 || game.gameplay.courseType == 2) {
 		if (game.procSelecter == 5) {
 			title = s2utf(game.sSelect.bmsList[game.sSelect.cur_song].courseTitle[game.gameplay.courseStageNow].body);
 			subtitle = s2utf(game.sSelect.bmsList[game.sSelect.cur_song].courseSubtitle[game.gameplay.courseStageNow].body);
+			md5 = game.sSelect.bmsList[game.sSelect.cur_song].courseHash[game.gameplay.courseStageNow].body;
 		}
 		else if (game.procSelecter == 13) {
 			title = s2utf(game.sSelect.bmsList[game.sSelect.cur_song].title.body);
 			subtitle = s2utf(game.sSelect.bmsList[game.sSelect.cur_song].subtitle.body);
+			md5 = game.sSelect.bmsList[game.sSelect.cur_song].hash.body;
 		}
 	}
 	else {
 		title = s2utf(game.sSelect.metaSelected.title.body);
 		subtitle = s2utf(game.sSelect.metaSelected.subtitle.body);
+		md5 = game.sSelect.bmsList[game.sSelect.cur_song].hash.body;
 	}
 	lamp = Lamp(game.gameplay.player[0].clearType);
 	lampBest = game.sSelect.old.playcount <= 0 && game.sSelect.old.stat_exscore <= 0 ? Lamp::NONE : Lamp(game.sSelect.old.clear);
