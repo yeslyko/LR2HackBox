@@ -38,20 +38,23 @@ static std::string s2utf(const std::string_view str) {
 TableManager::Table::Table(std::string name, std::string symbol, std::filesystem::path path, std::string dataUrl, nlohmann::ordered_json originalJson) : name(std::move(name)), symbol(std::move(symbol)), path(std::move(path)), dataPath(!dataUrl.empty() ? std::move(dataUrl) : "./data.json"), originalJson(std::move(originalJson)) {}
 
 TableManager::Entry::Entry(std::string level, std::string md5, std::string title, std::string artist, nlohmann::ordered_json originalJson) : level(std::move(level)), md5(std::move(md5)), title(std::move(title)), artist(std::move(artist)), originalJson(std::move(originalJson)) {
-	if (Entry::title.empty()) {
+	if (this->title.empty()) {
 		std::string dbTitle;
+		Misc::SqliteGetColumn(&dbTitle, std::format("SELECT title FROM song WHERE hash = '{}'", this->md5), 0);
 		std::string dbSubtitle;
-		Misc::SqliteGetColumn(&dbTitle, std::format("SELECT title FROM song WHERE hash = '{}'", Entry::md5), 0);
-		Misc::SqliteGetColumn(&dbSubtitle, std::format("SELECT subtitle FROM song WHERE hash = '{}'", Entry::md5), 0);
-		if (dbSubtitle.empty())
-			Entry::title = s2utf(dbTitle);
-		else // IDC whitespace
-			Entry::title = s2utf(std::format("{} {}", dbTitle, dbSubtitle));
+		Misc::SqliteGetColumn(&dbSubtitle, std::format("SELECT subtitle FROM song WHERE hash = '{}'", this->md5), 0);
+		this->title = dbSubtitle.empty()
+			? s2utf(dbTitle)
+			: s2utf(std::format("{} {}", dbTitle, dbSubtitle)); // IDC whitespace
 	}
-	if (Entry::artist.empty()) {
+	if (this->artist.empty()) {
 		std::string dbArtist;
-		Misc::SqliteGetColumn(&dbArtist, std::format("SELECT artist FROM song WHERE hash = '{}'", Entry::md5), 0);
-		Entry::artist = s2utf(dbArtist);
+		Misc::SqliteGetColumn(&dbArtist, std::format("SELECT artist FROM song WHERE hash = '{}'", this->md5), 0);
+		std::string dbSubartist;
+		Misc::SqliteGetColumn(&dbSubartist, std::format("SELECT subartist FROM song WHERE hash = '{}'", this->md5), 0);
+		this->artist = dbSubartist.empty()
+			? s2utf(dbArtist)
+			: s2utf(std::format("{} {}", dbArtist, dbSubartist)); // IDC whitespace
 	}
 }
 void TableManager::Table::AddEntry(std::string level, std::string md5, std::string title, std::string artist) {
@@ -355,7 +358,7 @@ void TableManager::Gui() {
 		LR2::SONGSELECT& select = LR2HackBox::Get().GetGame()->sSelect;
 		LR2::SONGDATA& curSong = select.bmsList[select.cur_song];
 		if (curSong.folderType == 0 && curSong.courseType < 0 && !std::string_view(curSong.hash.body).empty()) {
-			selectedTable->AddEntry("0", curSong.hash.body, s2utf(curSong.fulltitle.body), s2utf(curSong.artist.body));
+			selectedTable->AddEntry("0", curSong.hash.body, ""/*load from db*/, ""/*load from db*/);
 			force_resort = true;
 		}
 	};
