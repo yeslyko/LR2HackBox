@@ -303,7 +303,7 @@ bool ScoreCannon::PostScore(const Score& score, const std::string& screenshotPat
 			);
 			if (r.error.code != cpr::ErrorCode::OK) {
 				std::println("{}", data);
-				std::println("[LR2HackBox] Coulnd't POST to {}: {}", url, r.error.message);
+				std::println("[LR2HackBox] Couldn't POST to {}: {}", url, r.error.message);
 				std::fflush(stdout);
 			}
 			else if (r.status_code != 200) {
