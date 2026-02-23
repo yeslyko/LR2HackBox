@@ -309,6 +309,7 @@ void TableManager::Gui() {
 	static int item_selected_idx = 0;
 	static int last_item_selected_idx = 0;
 	static bool force_resort = false;
+	static bool force_find = false;
 	static std::string name = "NEW TABLE";
 
 	const char* combo_preview_value = mTableNames[item_selected_idx].c_str();
@@ -460,11 +461,16 @@ void TableManager::Gui() {
 	}
 	if (ImGui::Button("Add Song")) {
 		do_add();
-		do_find();
+		force_find = true;
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Find") && !selectedTable->entries.empty()) {
+		force_find = true;
+	}
+
+	if (force_find && !force_resort) {
 		do_find();
+		force_find = false;
 	}
 
 	if (ImGui::Button("Save")) {
