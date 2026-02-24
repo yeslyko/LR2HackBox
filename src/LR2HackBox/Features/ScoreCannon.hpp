@@ -1,5 +1,6 @@
 #include "BaseModels/ModFeature.hpp"
 
+#include <LR2Mem/LR2Typedefs.hpp>
 #include <safetyhook.hpp>
 
 class ScoreCannon : public ModFeature {
@@ -38,12 +39,8 @@ public:
 			ALLSCR
 		};
 		Score() = default;
-		Score(std::string folder, std::string title, std::string subtitle, Lamp lamp, Lamp lampBest, 
-			  Target target, Random arrange, std::string random, int rseed,
-			  int exScore, int exScoreMax, int exScoreBest, int exScoreTarget,
-			  int maxCombo, int maxComboBest, int missCount, int missCountBest, 
-			  int irPosition, int irPositionBest, int irCount);
-		Score(void* game);
+		Score(const LR2::game& game);
+		std::string md5;
 		std::string folder;
 		std::string title;
 		std::string subtitle;
