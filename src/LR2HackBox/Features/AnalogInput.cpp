@@ -1,16 +1,16 @@
 #define NOMINMAX
 #include "AnalogInput.hpp"
 
-#include <iostream>
 #include <cstdlib>
 #include <algorithm>
 #include "LR2HackBox/LR2HackBox.hpp"
+#include "LogConsole.hpp"
 
 #define DIRECTINPUT_VERSION 0x0700
 #include <dinput.h>
 #include "Helpers/Helpers.hpp"
 
-#include "imgui/imgui.h"
+#include <imgui/imgui.h>
 #include <safetyhook.hpp>
 
 typedef double(__cdecl* tGetTimeWrap)();
@@ -207,7 +207,9 @@ int __cdecl AnalogInput::OnInputToButton(void* is, void* cfg_input, int player, 
 }
 
 bool AnalogInput::Init(uintptr_t moduleBase) {
-	AnalogInput::mModuleBase = moduleBase;
+    AnalogInput::mModuleBase = moduleBase;
+
+    // FIXME: LR2 uses dinput8.dll if dinput.dll is missing.
 
     IDirectInput7* pDirectInput = NULL;
     typedef HRESULT(__stdcall* tDirectInputCreateEx)(HINSTANCE hinst,
@@ -216,9 +218,14 @@ bool AnalogInput::Init(uintptr_t moduleBase) {
         LPVOID* ppvOut,
         LPUNKNOWN punkOuter);
     tDirectInputCreateEx DirectInputCreateEx = (tDirectInputCreateEx)GetProcAddress(GetModuleHandle("dinput.dll"), "DirectInputCreateEx");
+    if (DirectInputCreateEx == nullptr) {
+        LogConsole::AddLog(LOG_ERROR, "DirectInputCreateEx of dinput.dll not found");
+        return false;
+    }
+
     GUID IID_IDirectInput7A = { 0x9A4CB684,0x236D,0x11D3,0x8E,0x9D,0x00,0xC0,0x4F,0x68,0x44,0xAE };
     if (DirectInputCreateEx(GetModuleHandle(NULL), DIRECTINPUT_VERSION, IID_IDirectInput7A, (LPVOID*)&pDirectInput, NULL) != DI_OK) {
-        std::cout << "DirectInputCreateEx failed" << std::endl;
+        LogConsole::AddLog(LOG_ERROR, "DirectInputCreateEx failed");
         return false;
     }
 
@@ -227,7 +234,7 @@ bool AnalogInput::Init(uintptr_t moduleBase) {
     GUID IID_IDirectInputDevice7A = { 0x57D7C6BC,0x2356,0x11D3,0x8E,0x9D,0x00,0xC0,0x4F,0x68,0x44,0xAE };
     if (pDirectInput->CreateDeviceEx(GUID_SysMouse, IID_IDirectInputDevice7A, (LPVOID*)&lpdiMouse, NULL) != DI_OK) {
         pDirectInput->Release();
-        std::cout << "Error creating DirectInput device" << std::endl;
+        LogConsole::AddLog(LOG_ERROR, "Error creating DirectInput device");
         return false;
     }
 
