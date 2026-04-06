@@ -3,7 +3,7 @@
 #include <iostream>
 #include <windows.h>
 
-#include "Helpers/Helpers.hpp"
+#include <Helpers/Helpers.hpp>
 #include "imgui/imgui.h"
 #include <imgui_internal.h>
 #include "kiero/kiero.h"
@@ -102,9 +102,14 @@ bool HookDinput7(HMODULE hModule) {
         LPVOID* ppvOut,
         LPUNKNOWN punkOuter);
     tDirectInputCreateEx DirectInputCreateEx = (tDirectInputCreateEx)GetProcAddress(hModule, "DirectInputCreateEx");
+    if (DirectInputCreateEx == nullptr) {
+        std::cout << "DirectInputCreateEx of dinput.dll not found\n" << std::flush;
+        return false;
+    }
+
     GUID IID_IDirectInput7A = { 0x9A4CB684,0x236D,0x11D3,0x8E,0x9D,0x00,0xC0,0x4F,0x68,0x44,0xAE };
     if (DirectInputCreateEx(GetModuleHandle(NULL), DIRECTINPUT_VERSION, IID_IDirectInput7A, (LPVOID*)&pDirectInput, NULL) != DI_OK) {
-        std::cout << "DirectInputCreateEx failed" << std::endl;
+        std::cout << "DirectInputCreateEx failed\n" << std::flush;
         return false;
     }
 
@@ -113,24 +118,23 @@ bool HookDinput7(HMODULE hModule) {
     GUID IID_IDirectInputDevice7A = { 0x57D7C6BC,0x2356,0x11D3,0x8E,0x9D,0x00,0xC0,0x4F,0x68,0x44,0xAE };
     if (pDirectInput->CreateDeviceEx(GUID_SysMouse, IID_IDirectInputDevice7A, (LPVOID*)&lpdiMouse, NULL) != DI_OK) {
         pDirectInput->Release();
-        std::cout << "Error creating DirectInput device" << std::endl;
+        std::cout << "Error creating DirectInput device\n" << std::flush;
         return false;
     }
 
     uintptr_t vTable = mem::FindDMAAddy((uintptr_t)lpdiMouse, { 0x0 });
-
     
     GetDeviceState = (tGetDeviceState)(((char**)vTable)[9]);
 
     if (MH_CreateHookEx((LPVOID)GetDeviceState, &OnGetDeviceState, &GetDeviceState) != MH_OK)
     {
-        std::cout << "Couldn't hook GetDeviceState" << std::endl;
+        std::cout << "Couldn't hook GetDeviceState\n" << std::flush;
         return false;
     }
 
     if (MH_QueueEnableHook(MH_ALL_HOOKS) || MH_ApplyQueued() != MH_OK)
     {
-        std::cout << ("Couldn't enable dinput hooks");
+        std::cout << "Couldn't enable dinput hooks\n" << std::flush;
         return 1;
     }
 
@@ -151,7 +155,7 @@ void ImGuiInjector::HookDinput() {
         HookDinput7(dinputHandle7);
         break;
     }
-    case 8: std::cout << "Dinput8 hooking is unimplemented" << std::endl; break;
+    case 8: std::cout << "Dinput8 hooking is unimplemented\n" << std::flush; break;
     default: break;
     }
 }
@@ -274,8 +278,8 @@ void ImGuiInjector::LoadJapaneseFont() {
     try {
         io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msgothic.ttc", 16.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
     }
-    catch (...) {
-        std::cout << "Couldn't load font at path C:\\Windows\\Fonts\\msgothic.ttc" << std::endl;
+    catch (const std::exception& e) {
+        std::cout << "Couldn't load font at path C:\\Windows\\Fonts\\msgothic.ttc: " << e.what() << "\n" << std::flush;
     }
 }
 
