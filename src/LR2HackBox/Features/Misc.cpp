@@ -92,6 +92,9 @@ void Misc::OnSetRetryFlag(SafetyHookContext& regs) {
 	if (!misc.mIsRetryTweaks) return;
 
 	LR2::game& game = *LR2HackBox::Get().GetGame();
+
+	game.config.play.gaugeOption[0] = misc.mOrigGaugeType;
+
 	if ((game.KeyInput.p1_buttonInput[1] || game.KeyInput.p1_buttonInput[3] || game.KeyInput.p1_buttonInput[5] || game.KeyInput.p1_buttonInput[7] ||
 		game.KeyInput.p2_buttonInput[1] || game.KeyInput.p2_buttonInput[3] || game.KeyInput.p2_buttonInput[5] || game.KeyInput.p2_buttonInput[7]) &&
 		(game.KeyInput.p1_buttonInput[2] || game.KeyInput.p2_buttonInput[2])) 
@@ -99,8 +102,6 @@ void Misc::OnSetRetryFlag(SafetyHookContext& regs) {
 		game.gameplay.flag_retry = 0;
 		game.gameplay.randomseed = 0;
 		game.gameplay.bmsResourceLoaded = 1;
-
-		game.config.play.gaugeOption[0] = misc.mOrigGaugeType;
 	}
 }
 
