@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include "ScoreCannon.hpp"
 
+#include <format>
 #include <print>
 #include <codecvt>
 #include <exception>
@@ -52,7 +53,7 @@ static std::string s2utf(const std::string& str) {
 	return ws2utf(s2ws(str));
 }
 
-static const std::string GetLampText(const ScoreCannon::Score& score) {
+static std::string GetLampText(const ScoreCannon::Score& score) {
 	if (score.lampBest == ScoreCannon::Score::Lamp::NONE) {
 		return ":fireworks: First play!";
 	}
@@ -67,7 +68,7 @@ static const std::string GetLampText(const ScoreCannon::Score& score) {
 	}
 }
 
-static const unsigned int GetLampRGB(const ScoreCannon::Score& score) {
+static unsigned int GetLampRGB(const ScoreCannon::Score& score) {
 	switch (score.lamp) {
 	case ScoreCannon::Score::Lamp::FAILED:
 		return RGB(138,0,0);
@@ -92,25 +93,19 @@ static const unsigned int GetLampRGB(const ScoreCannon::Score& score) {
 	}
 }
 
-static const std::string GetDelta(const int& val1, const int& val2) {
-	int delta = val1 - val2;
-	if (delta >= 0) {
-		return std::format("+{}", delta);
-	}
-	else {
-		return std::to_string(delta);
-	}
+static std::string GetDelta(const int val1, const int val2) {
+    return std::format("{:+}", val1 - val2);
 }
 
-static const std::string GetDeltaNotation(const int& val1, const int& val2) {
+static const char* GetDeltaNotation(const int val1, const int val2) {
 	return val1 != val2 ? val1 > val2 ? ":arrow_up:" : ":arrow_down:" : ":arrow_right:";
 }
 
-static const float GetExPercentage(const int& exScore, const int& exScoreMax) {
+static float GetExPercentage(const int exScore, const int exScoreMax) {
 	return static_cast<float>(exScore) / exScoreMax * 100.f;
 }
 
-static const std::string GetExGradeDelta(const int& exScore, const int& exScoreMax) {
+static std::string GetExGradeDelta(const int exScore, const int exScoreMax) {
 	float score = static_cast<float>(exScore);
 	float scoreMax = static_cast<float>(exScoreMax);
 	Grade gradeNotation(F);
@@ -151,7 +146,7 @@ static const std::string GetExGradeDelta(const int& exScore, const int& exScoreM
 	return std::format("{}{}", grades[gradeNotation], GetDelta(score, gradeScore));
 }
 
-static const Grade GetExGrade(const int& exScore, const int& exScoreMax) {
+static Grade GetExGrade(const int exScore, const int exScoreMax) {
 	float score = static_cast<float>(exScore);
 	float scoreMax = static_cast<float>(exScoreMax);
 	if (exScore == exScoreMax) {
