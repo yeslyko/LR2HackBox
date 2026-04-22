@@ -3,6 +3,8 @@
 #include <safetyhook.hpp>
 
 #include <stdint.h>
+#include <string>
+#include <vector>
 #include <unordered_map>
 #include <deque>
 

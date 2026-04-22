@@ -4,16 +4,20 @@
 #include "Unrandomizer_SeedMap7K.hpp"
 #include "Unrandomizer_SeedMap5K.hpp"
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <array>
-#include <random>
-#include <chrono>
 #include <algorithm>
-#include <sstream>
-#include <locale>
+#include <array>
+#include <chrono>
 #include <codecvt>
+#include <cstdlib>
+#include <deque>
+#include <iterator>
+#include <locale>
+#include <random>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 #include "LR2HackBox/LR2HackBox.hpp"
 
