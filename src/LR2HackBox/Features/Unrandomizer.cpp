@@ -43,10 +43,8 @@ void Unrandomizer::OnSetRandomSeed(SafetyHookContext& regs) {
 		return;
 	}
 
-	if (game.config.play.random[0] != 2) return;
-
 	const int keymode = game.sSelect.metaSelected.keymode;
-	if (keymode != 5 && keymode != 7) return;
+	if (game.procSelecter != 4 || game.config.play.random[0] != 2 || (keymode != 5 && keymode != 7)) return;
 
 	if (unrandomizer.mIsRRandom) {
 		typedef int(__cdecl* tGetRand)(int RandMax);
@@ -126,7 +124,7 @@ static std::string ws2utf(const std::wstring& str) {
 
 void Unrandomizer::OnAfterPopulateNoteMapping(SafetyHookContext& regs) {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
-	if (game.config.play.random[0] != 2 || regs.esi != 0x0F || (game.gameplay.keymode != 7 && game.gameplay.keymode != 5)) return;
+	if (game.procSelecter != 4 || game.config.play.random[0] != 2 || regs.esi != 0x0F || (game.gameplay.keymode != 7 && game.gameplay.keymode != 5)) return;
 
 	int* noteMapping = (int*)(regs.esp + 0x1B0);
 	char noteOrder[8];
