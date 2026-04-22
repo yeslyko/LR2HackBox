@@ -47,26 +47,26 @@ void Unrandomizer::OnSetRandomSeed(SafetyHookContext& regs) {
 
 	if (keymode != 5 && keymode != 7) return;
 
-	if (!unrandomizer.GetEnabled()) {
-		if (unrandomizer.mIsRRandom) {
-			typedef int(__cdecl* tGetRand)(int RandMax);
-			tGetRand GetRand = (tGetRand)0x6C95E0;
+	if (unrandomizer.mIsRRandom) {
+		typedef int(__cdecl* tGetRand)(int RandMax);
+		tGetRand GetRand = (tGetRand)0x6C95E0;
 
-			std::array<char, 7> laneOrder = { '1', '2', '3', '4', '5', '6', '7' };
-			bool rotateRight = GetRand(1);
-			int rotateBy = 0;
+		std::array<char, 7> laneOrder = { '1', '2', '3', '4', '5', '6', '7' };
+		bool rotateRight = GetRand(1);
+		int rotateBy = 0;
 
-			if (rotateRight) std::reverse(laneOrder.begin(), laneOrder.begin() + keymode);
+		if (rotateRight) std::reverse(laneOrder.begin(), laneOrder.begin() + keymode);
 
-			while (rotateBy == 0) rotateBy = GetRand(keymode - 1);
-			std::rotate(laneOrder.begin(), laneOrder.begin() + rotateBy, laneOrder.begin() + keymode);
-			
-			uintptr_t unrandomseed = GetSeed(std::atoi(std::string_view(laneOrder).data()), keymode);
-			if (unrandomseed == 0xFFFF) return;
-			*randomseed = unrandomseed;
-		}
+		while (rotateBy == 0) rotateBy = GetRand(keymode - 1);
+		std::rotate(laneOrder.begin(), laneOrder.begin() + rotateBy, laneOrder.begin() + keymode);
+
+		uintptr_t unrandomseed = GetSeed(std::atoi(std::string_view(laneOrder).data()), keymode);
+		if (unrandomseed == 0xFFFF) return;
+		*randomseed = unrandomseed;
 		return;
 	}
+
+	if (!unrandomizer.GetEnabled()) return;
 
 	std::string laneOrder;
 	laneOrder.resize(7);
