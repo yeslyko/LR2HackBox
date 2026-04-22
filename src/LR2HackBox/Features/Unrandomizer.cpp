@@ -108,7 +108,7 @@ void Unrandomizer::OnSetRandomSeed(SafetyHookContext& regs) {
 	*randomseed = unrandomseed;
 }
 
-static std::wstring s2ws(const std::string& str)
+static std::wstring s2ws(const std::string_view str)
 {
 	int size_needed = MultiByteToWideChar(CP_OEMCP, 0, &str[0], (int)str.size(), NULL, 0);
 	std::wstring wstrTo(size_needed, 0);
@@ -134,12 +134,13 @@ void Unrandomizer::OnAfterPopulateNoteMapping(SafetyHookContext& regs) {
 		noteOrder[noteMapping[i] - 1] = i + '0';
 	}
 	noteOrder[7] = 0;
-	std::string name = ws2utf(s2ws(game.sSelect.metaSelected.title.body) + s2ws(game.sSelect.metaSelected.subtitle.body));
-	Unrandomizer::RandomHistoryEntry entry(name, noteOrder);
 	Unrandomizer& unrandomizer = *(Unrandomizer*)(LR2HackBox::Get().mUnrandomizer.get());
-	unrandomizer.AddToHistory(entry);
+	unrandomizer.AddToHistory(
+		{ws2utf(s2ws(game.sSelect.metaSelected.title.body) +
+				s2ws(game.sSelect.metaSelected.subtitle.body)),
+		noteOrder});
 
-	if (unrandomizer.mIsTrackRandom) unrandomizer.SetOrder(entry.GetRandom().c_str());
+	if (unrandomizer.mIsTrackRandom) unrandomizer.SetOrder(noteOrder);
 }
 
 bool Unrandomizer::Init(uintptr_t moduleBase) {
@@ -395,16 +396,16 @@ const std::deque<Unrandomizer::RandomHistoryEntry>& Unrandomizer::GetRandomHisto
 	return mRandomHistory;
 }
 void Unrandomizer::AddToHistory(RandomHistoryEntry entry) {
-	mRandomHistory.push_front(entry);
+	mRandomHistory.push_front(std::move(entry));
 }
 
-Unrandomizer::RandomHistoryEntry::RandomHistoryEntry(std::string title, std::string random) {
-	mTitle = title;
-	mRandom = random;
+Unrandomizer::RandomHistoryEntry::RandomHistoryEntry(std::string title, std::string random)
+	: mTitle(std::move(title)), mRandom(std::move(random))
+{
 }
-std::string Unrandomizer::RandomHistoryEntry::GetTitle() {
+const std::string& Unrandomizer::RandomHistoryEntry::GetTitle() {
 	return mTitle;
 }
-std::string Unrandomizer::RandomHistoryEntry::GetRandom() {
+const std::string& Unrandomizer::RandomHistoryEntry::GetRandom() {
 	return mRandom;
 }

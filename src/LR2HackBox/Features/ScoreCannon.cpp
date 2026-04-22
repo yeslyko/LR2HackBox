@@ -1,10 +1,12 @@
 #define NOMINMAX
 #include "ScoreCannon.hpp"
 
+#include <codecvt>
+#include <string>
+#include <exception>
 #include <format>
 #include <print>
-#include <codecvt>
-#include <exception>
+#include <string_view>
 
 #include "LR2HackBox/LR2HackBox.hpp"
 #include "Unrandomizer.hpp"
@@ -34,7 +36,7 @@ enum Grade {
 	MAX
 };
 
-static std::wstring s2ws(const std::string& str) {
+static std::wstring s2ws(const std::string_view str) {
 	int size_needed = MultiByteToWideChar(CP_OEMCP, 0, &str[0], (int)str.size(), NULL, 0);
 	std::wstring wstrTo(size_needed, 0);
 	MultiByteToWideChar(CP_OEMCP, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
@@ -49,7 +51,7 @@ static std::string ws2utf(const std::wstring& str) {
 	return converted_str;
 }
 
-static std::string s2utf(const std::string& str) {
+static std::string s2utf(const std::string_view str) {
 	return ws2utf(s2ws(str));
 }
 
