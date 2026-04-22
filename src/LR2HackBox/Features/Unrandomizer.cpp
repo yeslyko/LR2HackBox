@@ -336,10 +336,24 @@ void Unrandomizer::MirrorOrder() {
 void Unrandomizer::Menu() {
 	struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "Unradomizer" };
 
+	auto show_force_seed = [&]() {
+		ImGui::Checkbox("Force Seed:", &mIsSeeded);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(ImGui::CalcTextSize("32767X").x);
+		if (ImGui::InputInt("##unrandomizer_seed", &mSeed, 0)) {
+			mSeed = std::clamp(mSeed, 0, 0x7FFF);
+		}
+		ImGui::SameLine();
+		HelpMarker("Force specific seed for the BMS parser to use."
+				   " Impacts #RANDOM operations, all column shuffle types, etc."
+				   " Possible values are 0 - 32767. Prioritized over other options.");
+	};
+
 	LR2::game* game = LR2HackBox::Get().GetGame();
 	if (game->sSelect.metaSelected.keymode != 0 && game->sSelect.metaSelected.keymode != 7 && game->sSelect.metaSelected.keymode != 5) {
 		ImGui::TextUnformatted("Only 7K and 5K mode is currently implemented.");
 		mIsEnabled = false;
+		show_force_seed();
 		return;
 	}
 	int lastKeymode = mGuiKeymode;
@@ -382,14 +396,7 @@ void Unrandomizer::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("R-Random cyclically shifts the columns by a random amount, as well as has a chance to mirror them\n\nOnly this or random trainer can be enabled at a time");
-	ImGui::Checkbox("Force Seed:", &mIsSeeded);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(ImGui::CalcTextSize("32767X").x);
-	if (ImGui::InputInt("##unrandomizer_seed", &mSeed, 0)) {
-		mSeed = std::clamp(mSeed, 0, 0x7FFF);
-	}
-	ImGui::SameLine();
-	HelpMarker("Force specific seed for the BMS parser to use. Impacts #RANDOM operations, all column shuffle types, etc. Possible values are 0 - 32767. Prioritized over other options.");
+	show_force_seed();
 }
 
 const std::deque<Unrandomizer::RandomHistoryEntry>& Unrandomizer::GetRandomHistory() {
