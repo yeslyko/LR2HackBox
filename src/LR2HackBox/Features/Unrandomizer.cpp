@@ -43,8 +43,7 @@ void Unrandomizer::OnSetRandomSeed(SafetyHookContext& regs) {
 		return;
 	}
 
-	int keymode = std::min(game.sSelect.metaSelected.keymode, 7);
-
+	const int keymode = game.sSelect.metaSelected.keymode;
 	if (keymode != 5 && keymode != 7) return;
 
 	if (unrandomizer.mIsRRandom) {
