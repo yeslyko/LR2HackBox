@@ -4,16 +4,20 @@
 #include "Unrandomizer_SeedMap7K.hpp"
 #include "Unrandomizer_SeedMap5K.hpp"
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <array>
-#include <random>
-#include <chrono>
 #include <algorithm>
-#include <sstream>
-#include <locale>
+#include <array>
+#include <chrono>
 #include <codecvt>
+#include <cstdlib>
+#include <deque>
+#include <iterator>
+#include <locale>
+#include <random>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 #include "LR2HackBox/LR2HackBox.hpp"
 
@@ -39,30 +43,29 @@ void Unrandomizer::OnSetRandomSeed(SafetyHookContext& regs) {
 		return;
 	}
 
-	int keymode = std::min(game.sSelect.metaSelected.keymode, 7);
+	const int keymode = game.sSelect.metaSelected.keymode;
+	if (game.procSelecter != 4 || game.config.play.random[0] != 2 || (keymode != 5 && keymode != 7)) return;
 
-	if (keymode != 5 && keymode != 7) return;
+	if (unrandomizer.mIsRRandom) {
+		typedef int(__cdecl* tGetRand)(int RandMax);
+		tGetRand GetRand = (tGetRand)0x6C95E0;
 
-	if (!unrandomizer.GetEnabled()) {
-		if (unrandomizer.mIsRRandom) {
-			typedef int(__cdecl* tGetRand)(int RandMax);
-			tGetRand GetRand = (tGetRand)0x6C95E0;
+		std::array<char, 7> laneOrder = { '1', '2', '3', '4', '5', '6', '7' };
+		bool rotateRight = GetRand(1);
+		int rotateBy = 0;
 
-			std::array<char, 7> laneOrder = { '1', '2', '3', '4', '5', '6', '7' };
-			bool rotateRight = GetRand(1);
-			int rotateBy = 0;
+		if (rotateRight) std::reverse(laneOrder.begin(), laneOrder.begin() + keymode);
 
-			if (rotateRight) std::reverse(laneOrder.begin(), laneOrder.begin() + keymode);
+		while (rotateBy == 0) rotateBy = GetRand(keymode - 1);
+		std::rotate(laneOrder.begin(), laneOrder.begin() + rotateBy, laneOrder.begin() + keymode);
 
-			while (rotateBy == 0) rotateBy = GetRand(keymode - 1);
-			std::rotate(laneOrder.begin(), laneOrder.begin() + rotateBy, laneOrder.begin() + keymode);
-			
-			uintptr_t unrandomseed = GetSeed(std::atoi(std::string_view(laneOrder).data()), keymode);
-			if (unrandomseed == 0xFFFF) return;
-			*randomseed = unrandomseed;
-		}
+		uintptr_t unrandomseed = GetSeed(std::atoi(std::string_view(laneOrder).data()), keymode);
+		if (unrandomseed == 0xFFFF) return;
+		*randomseed = unrandomseed;
 		return;
 	}
+
+	if (!unrandomizer.GetEnabled()) return;
 
 	std::string laneOrder;
 	laneOrder.resize(7);
@@ -103,7 +106,7 @@ void Unrandomizer::OnSetRandomSeed(SafetyHookContext& regs) {
 	*randomseed = unrandomseed;
 }
 
-static std::wstring s2ws(const std::string& str)
+static std::wstring s2ws(const std::string_view str)
 {
 	int size_needed = MultiByteToWideChar(CP_OEMCP, 0, &str[0], (int)str.size(), NULL, 0);
 	std::wstring wstrTo(size_needed, 0);
@@ -121,7 +124,7 @@ static std::string ws2utf(const std::wstring& str) {
 
 void Unrandomizer::OnAfterPopulateNoteMapping(SafetyHookContext& regs) {
 	LR2::game& game = *LR2HackBox::Get().GetGame();
-	if (game.config.play.random[0] != 2 || regs.esi != 0x0F || (game.gameplay.keymode != 7 && game.gameplay.keymode != 5)) return;
+	if (game.procSelecter != 4 || game.config.play.random[0] != 2 || regs.esi != 0x0F || (game.gameplay.keymode != 7 && game.gameplay.keymode != 5)) return;
 
 	int* noteMapping = (int*)(regs.esp + 0x1B0);
 	char noteOrder[8];
@@ -129,12 +132,13 @@ void Unrandomizer::OnAfterPopulateNoteMapping(SafetyHookContext& regs) {
 		noteOrder[noteMapping[i] - 1] = i + '0';
 	}
 	noteOrder[7] = 0;
-	std::string name = ws2utf(s2ws(game.sSelect.metaSelected.title.body) + s2ws(game.sSelect.metaSelected.subtitle.body));
-	Unrandomizer::RandomHistoryEntry entry(name, noteOrder);
 	Unrandomizer& unrandomizer = *(Unrandomizer*)(LR2HackBox::Get().mUnrandomizer.get());
-	unrandomizer.AddToHistory(entry);
+	unrandomizer.AddToHistory(
+		{ws2utf(s2ws(game.sSelect.metaSelected.title.body) +
+				s2ws(game.sSelect.metaSelected.subtitle.body)),
+		noteOrder});
 
-	if (unrandomizer.mIsTrackRandom) unrandomizer.SetOrder(entry.GetRandom().c_str());
+	if (unrandomizer.mIsTrackRandom) unrandomizer.SetOrder(noteOrder);
 }
 
 bool Unrandomizer::Init(uintptr_t moduleBase) {
@@ -330,10 +334,24 @@ void Unrandomizer::MirrorOrder() {
 void Unrandomizer::Menu() {
 	struct IdPopper { IdPopper(const char* id) { ImGui::PushID(id); };  ~IdPopper() { ImGui::PopID(); } } _id_popper{ "Unradomizer" };
 
+	auto show_force_seed = [&]() {
+		ImGui::Checkbox("Force Seed:", &mIsSeeded);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(ImGui::CalcTextSize("32767X").x);
+		if (ImGui::InputInt("##unrandomizer_seed", &mSeed, 0)) {
+			mSeed = std::clamp(mSeed, 0, 0x7FFF);
+		}
+		ImGui::SameLine();
+		HelpMarker("Force specific seed for the BMS parser to use."
+				   " Impacts #RANDOM operations, all column shuffle types, etc."
+				   " Possible values are 0 - 32767. Prioritized over other options.");
+	};
+
 	LR2::game* game = LR2HackBox::Get().GetGame();
 	if (game->sSelect.metaSelected.keymode != 0 && game->sSelect.metaSelected.keymode != 7 && game->sSelect.metaSelected.keymode != 5) {
 		ImGui::TextUnformatted("Only 7K and 5K mode is currently implemented.");
 		mIsEnabled = false;
+		show_force_seed();
 		return;
 	}
 	int lastKeymode = mGuiKeymode;
@@ -376,30 +394,23 @@ void Unrandomizer::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("R-Random cyclically shifts the columns by a random amount, as well as has a chance to mirror them\n\nOnly this or random trainer can be enabled at a time");
-	ImGui::Checkbox("Force Seed:", &mIsSeeded);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(ImGui::CalcTextSize("32767X").x);
-	if (ImGui::InputInt("##unrandomizer_seed", &mSeed, 0)) {
-		mSeed = std::clamp(mSeed, 0, 0x7FFF);
-	}
-	ImGui::SameLine();
-	HelpMarker("Force specific seed for the BMS parser to use. Impacts #RANDOM operations, all column shuffle types, etc. Possible values are 0 - 32767. Prioritized over other options.");
+	show_force_seed();
 }
 
 const std::deque<Unrandomizer::RandomHistoryEntry>& Unrandomizer::GetRandomHistory() {
 	return mRandomHistory;
 }
 void Unrandomizer::AddToHistory(RandomHistoryEntry entry) {
-	mRandomHistory.push_front(entry);
+	mRandomHistory.push_front(std::move(entry));
 }
 
-Unrandomizer::RandomHistoryEntry::RandomHistoryEntry(std::string title, std::string random) {
-	mTitle = title;
-	mRandom = random;
+Unrandomizer::RandomHistoryEntry::RandomHistoryEntry(std::string title, std::string random)
+	: mTitle(std::move(title)), mRandom(std::move(random))
+{
 }
-std::string Unrandomizer::RandomHistoryEntry::GetTitle() {
+const std::string& Unrandomizer::RandomHistoryEntry::GetTitle() {
 	return mTitle;
 }
-std::string Unrandomizer::RandomHistoryEntry::GetRandom() {
+const std::string& Unrandomizer::RandomHistoryEntry::GetRandom() {
 	return mRandom;
 }

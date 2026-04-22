@@ -2,13 +2,15 @@
 
 #include "Misc.hpp"
 
-#include <iostream>
-#include <print>
-#include <ranges>
-#include <unordered_map>
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
+#include <print>
+#include <ranges>
+#include <string>
+#include <string_view>
+#include <unordered_map>
 #include <Gdiplus.h>
 #include "LR2HackBox/LR2HackBox.hpp"
 #include "AnalogInput.hpp"
@@ -544,7 +546,7 @@ void Misc::OnDrawNotesGetSongtimer(SafetyHookContext& regs) {
 	}
 }
 
-static std::wstring s2ws(const std::string& str)
+static std::wstring s2ws(const std::string_view str)
 {
 	int size_needed = MultiByteToWideChar(CP_OEMCP, 0, &str[0], (int)str.size(), NULL, 0);
 	std::wstring wstrTo(size_needed, 0);

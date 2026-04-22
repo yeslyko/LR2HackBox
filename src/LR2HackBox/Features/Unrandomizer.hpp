@@ -3,6 +3,8 @@
 #include <safetyhook.hpp>
 
 #include <stdint.h>
+#include <string>
+#include <vector>
 #include <unordered_map>
 #include <deque>
 
@@ -27,8 +29,8 @@ public:
 		std::string mRandom;
 	public:
 		RandomHistoryEntry(std::string title, std::string random);
-		std::string GetTitle();
-		std::string GetRandom();
+		const std::string& GetTitle();
+		const std::string& GetRandom();
 	};
 
 	std::string GetLastRandom();
