@@ -43,6 +43,8 @@ void Unrandomizer::OnSetRandomSeed(SafetyHookContext& regs) {
 		return;
 	}
 
+	if (game.config.play.random[0] != 2) return;
+
 	const int keymode = game.sSelect.metaSelected.keymode;
 	if (keymode != 5 && keymode != 7) return;
 
