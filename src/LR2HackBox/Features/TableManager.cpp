@@ -1,16 +1,20 @@
 #define NOMINMAX
 #include "TableManager.hpp"
 
-#include "Misc.hpp"
 #include "LogConsole.hpp"
+#include "Misc.hpp"
 
-#include <LR2HackBox/LR2HackBox.hpp>
 #include <ImGuiInjector/ImGuiInjector.hpp>
-#include <filesystem>
-#include <fstream>
-#include <format>
+#include <LR2HackBox/LR2HackBox.hpp>
+#include <algorithm>
+#include <cctype>
 #include <codecvt>
+#include <filesystem>
+#include <format>
+#include <fstream>
 #include <ranges>
+#include <string_view>
+#include <utility>
 
 #include <imgui/imgui.h>
 #include <imgui/misc/cpp/imgui_stdlib.h>
@@ -192,6 +196,7 @@ void TableManager::Reload() {
 							std::string entryArtist = get_valid(entry, "artist");
 							if (entryLevel.empty()) continue;
 							if (entryMd5.empty()) continue;
+							for (char& c : entryMd5) c = std::tolower(static_cast<unsigned char>(c));
 							table.AddEntry(entryLevel, entryMd5, entryTitle, entryArtist, entry);
 						}
 					}
