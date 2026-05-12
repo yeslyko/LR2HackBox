@@ -3,7 +3,7 @@
 	url = https://github.com/MatVeiQaaa/kiero.git
 [submodule "ext/minhook"]
 	path = ext/minhook
-	url = https://github.com/TsudaKageyu/minhook.git
+	url = https://github.com/MatVeiQaaa/minhook.git
 [submodule "ext/imgui"]
 	path = ext/imgui
 	url = https://github.com/ocornut/imgui
