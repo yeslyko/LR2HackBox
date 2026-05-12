@@ -127,12 +127,16 @@
     <VcpkgInstalledDir>
     </VcpkgInstalledDir>
     <VcpkgUseMD>true</VcpkgUseMD>
+    <VcpkgAdditionalInstallOptions>
+    </VcpkgAdditionalInstallOptions>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
     <VcpkgInstalledDir>
     </VcpkgInstalledDir>
     <VcpkgUseMD>true</VcpkgUseMD>
+    <VcpkgAdditionalInstallOptions>
+    </VcpkgAdditionalInstallOptions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
