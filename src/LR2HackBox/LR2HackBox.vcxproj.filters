@@ -63,6 +63,7 @@
     <ClInclude Include="Features\LogConsole.hpp">
       <Filter>Header Files\Features</Filter>
     </ClInclude>
+    <ClInclude Include="Features\GameplayModifiers.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LR2HackBox.cpp">

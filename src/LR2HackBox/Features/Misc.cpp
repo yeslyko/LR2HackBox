@@ -76,8 +76,8 @@ bool Misc::SqliteGetColumn(T* output, std::string querry, int columnIdx) {
 	return success;
 }
 
-auto GamePlaySound = (int(__cdecl*)(LR2::AUDIO * aud, LR2::SOUNDDATA * sound, LR2::FMOD_CHANNELGROUP * channelgroup, int stage))0x4B8F20;
-auto LoadSound = (int(__cdecl*)(LR2::AUDIO * aud, LR2::SOUNDDATA * sound, LR2::CSTR filepath, int loop, int disableDSP, int previewFlag))0x4B8BB0;
+auto GamePlaySound = (int(__cdecl*)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound, FMOD_CHANNELGROUP* channelgroup, int stage))0x4B8F20;
+auto LoadSound = (int(__cdecl*)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound, LR2::CSTR filepath, int loop, int disableDSP, int previewFlag))0x4B8BB0;
 
 static void StopKeysounds() {
 	typedef int(__cdecl* tStopSound)(LR2::AUDIO* aud, LR2::SOUNDDATA* sound);

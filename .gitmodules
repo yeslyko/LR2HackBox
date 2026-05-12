@@ -16,3 +16,9 @@
 [submodule "ext/PicoSHA2"]
 	path = ext/PicoSHA2
 	url = https://github.com/okdshin/PicoSHA2.git
+[submodule "ext/mecab"]
+	path = ext/mecab
+	url = https://github.com/taku910/mecab.git
+[submodule "ext/romaji-cpp"]
+	path = ext/romaji-cpp
+	url = https://github.com/bdusell/romaji-cpp.git
