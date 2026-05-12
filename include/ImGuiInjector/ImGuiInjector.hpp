@@ -10,6 +10,7 @@ public:
 	void SetWndProcHook(HWND hWnd);
 	HWND GetWindowHandle();
 	WNDPROC GetPreviousWndProc();
+	const static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	bool WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	void AddMenu(ImGuiMenu* pMenu);
 	void RunMenus();
@@ -21,15 +22,16 @@ public:
 	void LoadJapaneseFont();
 	void SetStartingStyle(const ImGuiStyle& style);
 	void SetCanvasSize(const ImVec2& size);
+	void SetOutputSize(const ImVec2& size);
 	void SetGlobalScale(float scale);
 	void UpdateGlobalScale();
+
 private:
 	ImGuiInjector();
 	~ImGuiInjector() = default;
 	ImGuiInjector(const ImGuiInjector&) = delete;
 	ImGuiInjector& operator=(const ImGuiInjector&) = delete;
 
-	void HookDinput();
 	int mDinputVer = 0;
 
 	bool mWantsMouseInput = false;
@@ -40,9 +42,11 @@ private:
 	WNDPROC mPreviousWndProc = nullptr;
 
 	ImVec2 mCanvasSize = { 0.f, 0.f };
+	ImVec2 mOutputSize = { 0.f, 0.f };
 
 	ImGuiStyle mStartingStyle;
 	float mGlobalScale = 1.f;
+	bool mScaleChanged = false;
 
 	std::vector<ImGuiMenu*> mMenus;
 };

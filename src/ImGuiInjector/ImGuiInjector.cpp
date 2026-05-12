@@ -1,13 +1,16 @@
-#include "ImGuiInjector/ImGuiInjector.hpp"
+#include <ImGuiInjector/ImGuiInjector.hpp>
 
 #include <iostream>
-#include <windows.h>
+#include <windowsx.h>
 
 #include <Helpers/Helpers.hpp>
-#include "imgui/imgui.h"
+#include <imgui/imgui.h>
 #include <imgui_internal.h>
-#include "kiero/kiero.h"
-#include "minhook/include/MinHook.h"
+#include <kiero/kiero.h>
+#include <minhook/include/MinHook.h>
+#include <safetyhook.hpp>
+
+#include <ImGuiInjector/DinputHook.hpp>
 
 #pragma comment (lib, "BaseModels.lib")
 
@@ -16,12 +19,6 @@
 #elif defined _M_IX86
 #pragma comment(lib, "libMinHook.x86.lib")
 #endif
-
-template <typename T>
-inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
-{
-    return MH_CreateHook(pTarget, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
-}
 
 #if KIERO_INCLUDE_D3D9
 # include "kiero/examples/imgui/impl/d3d9_impl.h"
@@ -50,16 +47,12 @@ inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-static UINT lastMsg = 0;
-const static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-   /* if (lastMsg != msg) {
-        std::cout << "Message: " << msg << std::endl;
-        lastMsg = msg;
-    }*/
-    if (ImGuiInjector::Get().WndProcHandler(hWnd, msg, wParam, lParam)) {
+const LRESULT WINAPI ImGuiInjector::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    ImGuiInjector& self = ImGuiInjector::Get();
+    if (self.WndProcHandler(hWnd, msg, wParam, lParam)) {
     	return true;
     }
-    return CallWindowProc(ImGuiInjector::Get().GetPreviousWndProc(), hWnd, msg, wParam, lParam);
+    return CallWindowProc(self.GetPreviousWndProc(), hWnd, msg, wParam, lParam);
 };
 
 ImGuiInjector& ImGuiInjector::Get() {
@@ -72,92 +65,22 @@ ImGuiInjector::ImGuiInjector() {
     ImGuiInjector::Init();
 }
 
-#define DIRECTINPUT_VERSION 0x0700
-#include <dinput.h>
-
-typedef HRESULT(__stdcall* tGetDeviceState)(IDirectInputDevice7* pThis, DWORD cbData, LPVOID lpvData);
-tGetDeviceState GetDeviceState = nullptr;
-HRESULT __stdcall OnGetDeviceState(IDirectInputDevice7* pThis, DWORD cbData, LPVOID lpvData) {
-    HRESULT result = GetDeviceState(pThis, cbData, lpvData);
+static safetyhook::InlineHook GetDeviceState;
+static HRESULT __stdcall OnGetDeviceState(IDirectInputDevice7A* pThis, DWORD cbData, LPVOID lpvData) {
+    HRESULT result = GetDeviceState.stdcall<HRESULT>(pThis, cbData, lpvData);
     if (result == DI_OK) {
-        if (ImGuiInjector::Get().WantsMouseInput() && cbData == sizeof(DIMOUSESTATE2)) { // Mouse device
-            ((LPDIMOUSESTATE2)lpvData)->rgbButtons[0] = 0;
-            ((LPDIMOUSESTATE2)lpvData)->rgbButtons[1] = 0;
+        ImGuiInjector& imgui = ImGuiInjector::Get();
+        if (imgui.WantsMouseInput() && cbData == sizeof(DIMOUSESTATE2)) {
+            DIMOUSESTATE2& mouse = *reinterpret_cast<LPDIMOUSESTATE2>(lpvData);
+            mouse.rgbButtons[0] = 0;
+            mouse.rgbButtons[1] = 0;
+            mouse.lZ = 0;
         }
-        if (ImGuiInjector::Get().WantsKeyboardInput() && cbData == 256) { // Keyboard device
+        if (imgui.WantsKeyboardInput() && cbData == 256) {
             memset(lpvData, 0, 256);
         }
-        //if (cbData == sizeof(DIJOYSTATE)) { // Controller device
-        //    memset(lpvData, 0, cbData);
-        //}
     }
     return result;
-}
-
-bool HookDinput7(HMODULE hModule) {
-    IDirectInput7* pDirectInput = NULL;
-    typedef HRESULT(__stdcall* tDirectInputCreateEx)(HINSTANCE hinst,
-        DWORD dwVersion,
-        REFIID riidltf,
-        LPVOID* ppvOut,
-        LPUNKNOWN punkOuter);
-    tDirectInputCreateEx DirectInputCreateEx = (tDirectInputCreateEx)GetProcAddress(hModule, "DirectInputCreateEx");
-    if (DirectInputCreateEx == nullptr) {
-        std::cout << "DirectInputCreateEx of dinput.dll not found\n" << std::flush;
-        return false;
-    }
-
-    GUID IID_IDirectInput7A = { 0x9A4CB684,0x236D,0x11D3,0x8E,0x9D,0x00,0xC0,0x4F,0x68,0x44,0xAE };
-    if (DirectInputCreateEx(GetModuleHandle(NULL), DIRECTINPUT_VERSION, IID_IDirectInput7A, (LPVOID*)&pDirectInput, NULL) != DI_OK) {
-        std::cout << "DirectInputCreateEx failed\n" << std::flush;
-        return false;
-    }
-
-    LPDIRECTINPUTDEVICE7 lpdiMouse;
-    GUID GUID_SysMouse = { 0x6F1D2B60, 0xD5A0, 0x11CF, 0xBF, 0xC7, 0x44, 0x45, 0x53, 0x54, 0x00, 0x00 };
-    GUID IID_IDirectInputDevice7A = { 0x57D7C6BC,0x2356,0x11D3,0x8E,0x9D,0x00,0xC0,0x4F,0x68,0x44,0xAE };
-    if (pDirectInput->CreateDeviceEx(GUID_SysMouse, IID_IDirectInputDevice7A, (LPVOID*)&lpdiMouse, NULL) != DI_OK) {
-        pDirectInput->Release();
-        std::cout << "Error creating DirectInput device\n" << std::flush;
-        return false;
-    }
-
-    uintptr_t vTable = mem::FindDMAAddy((uintptr_t)lpdiMouse, { 0x0 });
-    
-    GetDeviceState = (tGetDeviceState)(((char**)vTable)[9]);
-
-    if (MH_CreateHookEx((LPVOID)GetDeviceState, &OnGetDeviceState, &GetDeviceState) != MH_OK)
-    {
-        std::cout << "Couldn't hook GetDeviceState\n" << std::flush;
-        return false;
-    }
-
-    if (MH_QueueEnableHook(MH_ALL_HOOKS) || MH_ApplyQueued() != MH_OK)
-    {
-        std::cout << "Couldn't enable dinput hooks\n" << std::flush;
-        return 1;
-    }
-
-    lpdiMouse->Release();
-    pDirectInput->Release();
-
-    return true;
-}
-
-void ImGuiInjector::HookDinput() {
-    HMODULE dinputHandle7 = GetModuleHandle(L"dinput.dll");
-    if (dinputHandle7) mDinputVer = 7;
-    HMODULE dinputHandle8 = GetModuleHandle(L"dinput8.dll");
-    if (dinputHandle8) mDinputVer = 8;
-
-    switch (mDinputVer) {
-    case 7: {
-        HookDinput7(dinputHandle7);
-        break;
-    }
-    case 8: std::cout << "Dinput8 hooking is unimplemented\n" << std::flush; break;
-    default: break;
-    }
 }
 
 int ImGuiInjector::Init() {
@@ -193,7 +116,7 @@ int ImGuiInjector::Init() {
             // TODO: Vulkan implementation?
             break;
         }
-        HookDinput();
+        mDinputVer = dinput::Hook(GetDeviceState, OnGetDeviceState);
         return 1;
     }
     
@@ -217,12 +140,56 @@ WNDPROC ImGuiInjector::GetPreviousWndProc() {
 }
 
 bool ImGuiInjector::WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    for (auto& menu : mMenus) {
-        menu->MessageHandler(hWnd, msg, wParam, lParam);
-    }
-    if (IsMenuRunning()) ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+    LPARAM imgui_lParam = lParam;
+    if(msg == WM_MOUSEMOVE || msg == WM_NCMOUSEMOVE) {
+        RECT r;
+        GetClientRect(hWnd, &r);
+        int windowRes[2] = { r.right - r.left, r.bottom - r.top };
+        float scaling_factor[2] = { mCanvasSize.x / windowRes[0], mCanvasSize.y / windowRes[1] };
+        POINT mouse_pos = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+        mouse_pos.x *= scaling_factor[0];
+        mouse_pos.y *= scaling_factor[1];
 
-    if (ImGuiInjector::WantsMouseInput() && msg == WM_MOUSEWHEEL) return true;
+        float canvasAR = mCanvasSize.x / mCanvasSize.y;
+        float outputAR = mOutputSize.x / mOutputSize.y;
+        if (canvasAR != outputAR) {
+            bool horizontal = canvasAR > outputAR;
+            auto& pos = horizontal ? mouse_pos.y : mouse_pos.x;
+            auto& size = horizontal ? mOutputSize.y : mOutputSize.x;
+            float scale = size / (size / canvasAR);
+            float& scalePos = horizontal ? scaling_factor[1] : scaling_factor[0];
+            pos *= scale;
+            pos -= (size - size / canvasAR) / 2 * scalePos * scale;
+        }
+
+        imgui_lParam = MAKELPARAM(mouse_pos.x, mouse_pos.y);
+    }
+    for (auto& menu : mMenus) {
+        menu->MessageHandler(hWnd, msg, wParam, imgui_lParam);
+    }
+    if (IsMenuRunning()) ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, imgui_lParam);
+
+    if (ImGuiInjector::WantsMouseInput()) {
+        switch (msg) {
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+        case WM_LBUTTONDBLCLK:
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP:
+        case WM_RBUTTONDBLCLK:
+        case WM_MOUSEWHEEL:
+            return true;
+        }
+    }
+
+    if (ImGuiInjector::WantsKeyboardInput()) {
+        switch (msg) {
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+        case WM_CHAR:
+            return true;
+        }
+    }
 
     return false;
 }
@@ -291,27 +258,16 @@ void ImGuiInjector::SetCanvasSize(const ImVec2& size) {
     mCanvasSize = size;
 }
 
+void ImGuiInjector::SetOutputSize(const ImVec2& size) {
+    mOutputSize = size;
+}
+
 void ImGuiInjector::UpdateGlobalScale() {
+    if (!mScaleChanged) return;
+    mScaleChanged = false;
     ImGuiStyle& style = ImGui::GetStyle();
     ImGuiStyle tmpStyle = mStartingStyle;
-    RECT wndRect;
-    GetClientRect(mWindowHandle, &wndRect);
-    if (wndRect.right - wndRect.left == 0 || wndRect.bottom - wndRect.top == 0) return;
-    bool initialRun = mCanvasSize.y > 0 ? false : true;
     float scale = mGlobalScale;
-    if (mCanvasSize.y > 0) scale *= static_cast<float>(wndRect.bottom - wndRect.top) / mCanvasSize.y;
-    static float lastScale = scale;
-    if (!initialRun && std::abs(scale - lastScale) < std::numeric_limits<float>::epsilon()) return;
-    if (!initialRun) {
-        static bool skipFirst = true;
-        if (!skipFirst) {
-            for (const auto& viewport : ImGui::GetCurrentContext()->Viewports) {
-                ImGui::ScaleWindowsInViewport(viewport, scale / lastScale);
-            }
-        }
-        skipFirst = false;
-    }
-    lastScale = scale;
     tmpStyle.ScaleAllSizes(scale);
     tmpStyle.FontScaleMain = scale;
     tmpStyle.MouseCursorScale = scale;
@@ -349,5 +305,6 @@ void ImGuiInjector::UpdateGlobalScale() {
 }
 
 void ImGuiInjector::SetGlobalScale(float scale) {
+    if (std::abs(mGlobalScale - scale) >= std::numeric_limits<float>::epsilon()) mScaleChanged = true;
     mGlobalScale = scale;
 }

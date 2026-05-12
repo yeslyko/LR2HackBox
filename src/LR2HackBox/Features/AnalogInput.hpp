@@ -3,6 +3,9 @@
 
 #include <unordered_map>
 #include <stdint.h>
+
+#define DIRECTINPUT_VERSION 0x0700
+#include <dinput.h>
 class AnalogInput : public ModFeature {
 public:
 	bool Init(uintptr_t moduleBase);
@@ -13,7 +16,7 @@ public:
 	void SetEnabled(bool value);
 
 private:
-	static HRESULT __stdcall OnGetDeviceState(void* pThis, DWORD cbData, LPVOID lpvData);
+	static HRESULT __stdcall OnGetDeviceState(IDirectInputDevice7A* pThis, DWORD cbData, LPVOID lpvData);
 	safetyhook::InlineHook oGetDeviceState;
 	static int __cdecl OnInputToButton(void* is, void* cfg_input, int player, int isReplay);
 	safetyhook::InlineHook oInputToButton;

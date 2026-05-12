@@ -1,13 +1,13 @@
-﻿#define SHOWIMGUIDEMO 0
+#define SHOWIMGUIDEMO 0
 
 #include "Features/MemoryTracker.hpp"
-#include "LR2HackBox/LR2HackBox.hpp"
+#include <LR2HackBox/LR2HackBox.hpp>
 
-#include "Helpers/Helpers.hpp"
-#include "ImGuiInjector/ImGuiInjector.hpp"
-#include "imgui/imgui.h"
-#include "imgui/imgui_internal.h"
-#include "minhook/include/MinHook.h"
+#include <Helpers/Helpers.hpp>
+#include <ImGuiInjector/ImGuiInjector.hpp>
+#include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
+#include <minhook/include/MinHook.h>
 
 #include <iostream>
 #include <string>

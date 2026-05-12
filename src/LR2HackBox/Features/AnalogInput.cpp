@@ -6,9 +6,8 @@
 #include "LR2HackBox/LR2HackBox.hpp"
 #include "LogConsole.hpp"
 
-#define DIRECTINPUT_VERSION 0x0700
-#include <dinput.h>
-#include "Helpers/Helpers.hpp"
+#include <Helpers/Helpers.hpp>
+#include <ImGuiInjector/DinputHook.hpp>
 
 #include <imgui/imgui.h>
 #include <safetyhook.hpp>
@@ -33,7 +32,7 @@ static bool SetDeadzone(void* pDevice, unsigned int value) {
 
 typedef HRESULT(__stdcall* tGetDeviceState)(IDirectInputDevice7* pThis, DWORD cbData, LPVOID lpvData);
 tGetDeviceState GetDeviceState = nullptr;
-HRESULT __stdcall AnalogInput::OnGetDeviceState(void* pThis, DWORD cbData, LPVOID lpvData) {
+HRESULT __stdcall AnalogInput::OnGetDeviceState(IDirectInputDevice7A* pThis, DWORD cbData, LPVOID lpvData) {
     AnalogInput& analogInput = *(AnalogInput*)(LR2HackBox::Get().mAnalogInput.get());
 
     IDirectInputDevice7& device = *(IDirectInputDevice7*)pThis;
@@ -47,6 +46,7 @@ HRESULT __stdcall AnalogInput::OnGetDeviceState(void* pThis, DWORD cbData, LPVOI
     if (!analogInput.devicesMap.contains(pThis)) {
         DIDEVICEINSTANCE ddinst;
         ddinst.dwSize = sizeof(DIDEVICEINSTANCE);
+        // broken in dinput8
         device.GetDeviceInfo(&ddinst);
         analogInput.devicesMap[pThis] = ddinst.tszProductName;
         analogInput.devices.push_back(pThis);
@@ -209,44 +209,7 @@ int __cdecl AnalogInput::OnInputToButton(void* is, void* cfg_input, int player, 
 bool AnalogInput::Init(uintptr_t moduleBase) {
     AnalogInput::mModuleBase = moduleBase;
 
-    // FIXME: LR2 uses dinput8.dll if dinput.dll is missing.
-
-    IDirectInput7* pDirectInput = NULL;
-    typedef HRESULT(__stdcall* tDirectInputCreateEx)(HINSTANCE hinst,
-        DWORD dwVersion,
-        REFIID riidltf,
-        LPVOID* ppvOut,
-        LPUNKNOWN punkOuter);
-    tDirectInputCreateEx DirectInputCreateEx = (tDirectInputCreateEx)GetProcAddress(GetModuleHandle("dinput.dll"), "DirectInputCreateEx");
-    if (DirectInputCreateEx == nullptr) {
-        LogConsole::AddLog(LOG_ERROR, "DirectInputCreateEx of dinput.dll not found");
-        return false;
-    }
-
-    GUID IID_IDirectInput7A = { 0x9A4CB684,0x236D,0x11D3,0x8E,0x9D,0x00,0xC0,0x4F,0x68,0x44,0xAE };
-    if (DirectInputCreateEx(GetModuleHandle(NULL), DIRECTINPUT_VERSION, IID_IDirectInput7A, (LPVOID*)&pDirectInput, NULL) != DI_OK) {
-        LogConsole::AddLog(LOG_ERROR, "DirectInputCreateEx failed");
-        return false;
-    }
-
-    LPDIRECTINPUTDEVICE7 lpdiMouse;
-    GUID GUID_SysMouse = { 0x6F1D2B60, 0xD5A0, 0x11CF, 0xBF, 0xC7, 0x44, 0x45, 0x53, 0x54, 0x00, 0x00 };
-    GUID IID_IDirectInputDevice7A = { 0x57D7C6BC,0x2356,0x11D3,0x8E,0x9D,0x00,0xC0,0x4F,0x68,0x44,0xAE };
-    if (pDirectInput->CreateDeviceEx(GUID_SysMouse, IID_IDirectInputDevice7A, (LPVOID*)&lpdiMouse, NULL) != DI_OK) {
-        pDirectInput->Release();
-        LogConsole::AddLog(LOG_ERROR, "Error creating DirectInput device");
-        return false;
-    }
-
-    uintptr_t vTable = mem::FindDMAAddy((uintptr_t)lpdiMouse, { 0x0 });
-
-    GetDeviceState = (tGetDeviceState)(((char**)vTable)[9]);
-
-    oGetDeviceState = safetyhook::create_inline(GetDeviceState, OnGetDeviceState);
-
-    lpdiMouse->Release();
-    pDirectInput->Release();
-
+    dinput::Hook(oGetDeviceState, OnGetDeviceState);
     oInputToButton = safetyhook::create_inline(InputToButton, OnInputToButton);
 
     ConfigManager& config = *LR2HackBox::Get().mConfig;
