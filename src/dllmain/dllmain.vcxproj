@@ -92,12 +92,14 @@
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
     <VcpkgUseMD>true</VcpkgUseMD>
-    <VcpkgAdditionalInstallOptions>--overlay-ports=$(SolutionDir)vcpkg_overlays/</VcpkgAdditionalInstallOptions>
+    <VcpkgAdditionalInstallOptions>
+    </VcpkgAdditionalInstallOptions>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
     <VcpkgUseMD>true</VcpkgUseMD>
-    <VcpkgAdditionalInstallOptions>--overlay-ports=$(SolutionDir)vcpkg_overlays/</VcpkgAdditionalInstallOptions>
+    <VcpkgAdditionalInstallOptions>
+    </VcpkgAdditionalInstallOptions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
