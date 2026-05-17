@@ -22,22 +22,9 @@
 
 #include "ImGuiInjector/ImGuiInjector.hpp"
 #include <safetyhook.hpp>
-#include "minhook/include/MinHook.h"
 #include "imgui/imgui.h"
 
 #pragma comment(lib, "Gdiplus.lib")
-
-#if defined _M_X64
-#pragma comment(lib, "libMinHook.x64.lib")
-#elif defined _M_IX86
-#pragma comment(lib, "libMinHook.x86.lib")
-#endif
-
-template <typename T>
-inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
-{
-	return MH_CreateHook(pTarget, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
-}
 
 static void SqliteGetColumn(std::string* output, void* pStmt, int columnIdx) {
 	typedef LR2::CSTR(__cdecl* tSQL_GetColumn)(int i, void* pStmt);
@@ -554,8 +541,7 @@ static std::wstring s2ws(const std::string_view str)
 	return wstrTo;
 }
 
-typedef int(__cdecl* tSaveDrawScreenToPNG)(int x1, int y1, int x2, int y2, const char* FileName, int CompressionLevel);
-tSaveDrawScreenToPNG SaveDrawScreenToPNG = (tSaveDrawScreenToPNG)0x510060;
+static safetyhook::InlineHook SaveDrawScreenToPNG;
 int Misc::OnSaveDrawScreenToPNG(int x1, int y1, int x2, int y2, const char* FileName, int CompressionLevel) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
 	LR2::game& game = *LR2HackBox::Get().GetGame();
@@ -564,7 +550,7 @@ int Misc::OnSaveDrawScreenToPNG(int x1, int y1, int x2, int y2, const char* File
 	std::string path = misc.mIsRerouteScreenshots ? directory + FileName : FileName;
 	if (misc.mIsRerouteScreenshots && !std::filesystem::directory_entry(directory).exists())
 		std::filesystem::create_directories(directory);
-	int result = SaveDrawScreenToPNG(x1, y1, x2, y2, path.c_str(), CompressionLevel);
+	int result = SaveDrawScreenToPNG.ccall<int>(x1, y1, x2, y2, path.c_str(), CompressionLevel);
 
 	if (misc.mIsScreenshotsCopybuffer) {
 		ULONG_PTR gdiplusToken = NULL;
@@ -666,8 +652,7 @@ void Misc::OnBeforeAddDrawingBuffer_LN(SafetyHookContext& regs) {
 	misc.mCurrentDrawingLNObj = (void*)(**offset1 + *offset2);
 }
 
-typedef int (__cdecl* tAddDrawingBuffer_LN)(LR2::DrawingBuf* drb, LR2::SRCstruct* srcLs, LR2::SRCstruct* srcLe, LR2::SRCstruct* srcLb, LR2::DSTstruct* dst, LR2::Timer* T, float shiftX, float shiftY, float longY, int alpha, float sizeX, float sizeY);
-tAddDrawingBuffer_LN AddDrawingBuffer_LN = (tAddDrawingBuffer_LN)0x49D240;
+static safetyhook::InlineHook AddDrawingBuffer_LN;
 int Misc::OnAddDrawingBuffer_LN_Fixed(void* drbIn, void* srcLsIn, void* srcLeIn, void* srcLbIn, void* dstIn, void* TIn, float shiftX, float shiftY, float longY, int alpha, float sizeX, float sizeY, void* lnObjIn) {
 	LR2::DrawingBuf* drb = (LR2::DrawingBuf*)drbIn;
 	LR2::SRCstruct* srcLs = (LR2::SRCstruct*)srcLsIn;
@@ -802,14 +787,7 @@ int Misc::OnAddDrawingBuffer_LN(void* drb, void* srcLs, void* srcLe, void* srcLb
 		misc.mCurrentDrawingLNObj = nullptr;
 		return misc.OnAddDrawingBuffer_LN_Fixed((LR2::DrawingBuf*)drb, (LR2::SRCstruct*)srcLs, (LR2::SRCstruct*)srcLe, (LR2::SRCstruct*)srcLb, (LR2::DSTstruct*)dst, (LR2::Timer*)T, shiftX, shiftY, longY, alpha, sizeX, sizeY, lnObj);
 	}
-	return AddDrawingBuffer_LN((LR2::DrawingBuf*)drb, (LR2::SRCstruct*)srcLs, (LR2::SRCstruct*)srcLe, (LR2::SRCstruct*)srcLb, (LR2::DSTstruct*)dst, (LR2::Timer*)T, shiftX, shiftY, longY, alpha, sizeX, sizeY);
-}
-
-typedef int(__cdecl* tAddDrawingBuffer_PlayArea)(LR2::DrawingBuf* drb, LR2::SRCstruct* src, LR2::DSTstruct* dst, LR2::Timer* T, float shiftX, float shiftY, int alpha, float sizeX, float sizeY, char flag);
-tAddDrawingBuffer_PlayArea AddDrawingBuffer_PlayArea = (tAddDrawingBuffer_PlayArea)0x49D630;
-int Misc::OnAddDrawingBuffer_PlayArea(void* drb, void* src, void* dst, void* T, float shiftX, float shiftY, int alpha, float sizeX, float sizeY, char flag) {
-	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
-	return AddDrawingBuffer_PlayArea((LR2::DrawingBuf*)drb, (LR2::SRCstruct*)src, (LR2::DSTstruct*)dst, (LR2::Timer*)T, shiftX, shiftY, alpha, sizeX, sizeY, flag);
+	return AddDrawingBuffer_LN.ccall<int>((LR2::DrawingBuf*)drb, (LR2::SRCstruct*)srcLs, (LR2::SRCstruct*)srcLe, (LR2::SRCstruct*)srcLb, (LR2::DSTstruct*)dst, (LR2::Timer*)T, shiftX, shiftY, longY, alpha, sizeX, sizeY);
 }
 
 void Misc::OnAutoadjustDec(SafetyHookContext& regs) {
@@ -871,17 +849,16 @@ void Misc::SetSkipResultSub(bool enable) {
 	hResult = VirtualProtect(isNoSaveJne, sizeof(unsigned short), oldProtection, &discard);
 }
 
-typedef int(__cdecl* tSetObjectString)(unsigned int num, LR2::CSTR string, LR2::CSTR* objectList);
-tSetObjectString SetObjectString = (tSetObjectString)0x4B6C40;
+safetyhook::InlineHook SetObjectString;
 int Misc::OnSetObjectString(unsigned int num, void* string, void** objectList) {
-	if (!LR2HackBox::Get().GetGame()) return SetObjectString(num, (LR2::CSTR&)string, (LR2::CSTR*)objectList);
+	if (!LR2HackBox::Get().GetGame()) return SetObjectString.ccall<int>(num, (LR2::CSTR&)string, (LR2::CSTR*)objectList);
 	LR2::game& game = *LR2HackBox::Get().GetGame();
 	if (num == 80 && game.config.play.autojudge == 3) {
-		return SetObjectString(80, "RESET", game.txtStruct.objectStr);
+		return SetObjectString.ccall<int>(80, "RESET", game.txtStruct.objectStr);
 	}
-	return SetObjectString(num, (LR2::CSTR&)string, (LR2::CSTR*)objectList);
+	return SetObjectString.ccall<int>(num, (LR2::CSTR&)string, (LR2::CSTR*)objectList);
 }
-#include <Helpers/Helpers.hpp>
+
 safetyhook::InlineHook oSetFirstSkins;
 int Misc::OnSetFirstSkins(void* g) {
 	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
@@ -1091,6 +1068,16 @@ void Misc::OnLoadKeysoundsExit(SafetyHookContext& regs) {
 	KeysoundsLoadQueue.clear();
 }
 
+safetyhook::InlineHook DSTDbyTime;
+LR2::DSTdraw* __cdecl Misc::OnDSTDbyTime(LR2::DSTdraw* oBuf, LR2::DSTdraw* dstd1, LR2::DSTdraw* dstd2, double t1, double t2, double tO) {
+	Misc& misc = *(Misc*)(LR2HackBox::Get().mMisc.get());
+	if (misc.mIsSongbarFix) {
+		auto InitDSTdraw = (int(__cdecl*)(LR2::DSTdraw * dstd))0x49E890;
+		InitDSTdraw(oBuf);
+	}
+	return DSTDbyTime.ccall<LR2::DSTdraw*>(oBuf, dstd1, dstd2, t1, t2, tO);
+}
+
 bool Misc::EarlyInit(uintptr_t moduleBase) {
 	Misc::mModuleBase = moduleBase;
 
@@ -1140,6 +1127,7 @@ void Misc::LoadConfig() {
 	mIsBindsFix = config.ReadValue("bBindsFix", mIsBindsFix);
 	mIsNoGhostGaugetype = config.ReadValue("bNoGhostGaugetype", mIsNoGhostGaugetype);
 	mIsMultithreadKeysounds = config.ReadValue("bMultithreadKeysounds", mIsMultithreadKeysounds);
+	mIsSongbarFix = config.ReadValue("bSongbarFix", mIsSongbarFix);
 	mAutoadjustClampMin = config.ReadValue("iAutoadjustClampMin", mAutoadjustClampMin);
 	mAutoadjustClampMax = config.ReadValue("iAutoadjustClampMax", mAutoadjustClampMax);
 
@@ -1189,30 +1177,13 @@ void Misc::SetHooks() {
 
 	mMidHooks.push_back(safetyhook::create_mid(mModuleBase + 0x02D0F6, OnCopyGhostGaugetype));
 
-	if (MH_CreateHookEx((LPVOID)SaveDrawScreenToPNG, &OnSaveDrawScreenToPNG, &SaveDrawScreenToPNG) != MH_OK)
-	{
-		std::cout << "Couldn't hook SaveDrawScreenToPNG" << std::endl;
-	}
+	SaveDrawScreenToPNG = safetyhook::create_inline(0x510060, OnSaveDrawScreenToPNG);
 
-	if (MH_CreateHookEx((LPVOID)AddDrawingBuffer_PlayArea, &OnAddDrawingBuffer_PlayArea, &AddDrawingBuffer_PlayArea) != MH_OK)
-	{
-		std::cout << "Couldn't hook AddDrawingBuffer_PlayArea" << std::endl;
-	}
+	AddDrawingBuffer_LN = safetyhook::create_inline(0x49D240, OnAddDrawingBuffer_LN);
 
-	if (MH_CreateHookEx((LPVOID)AddDrawingBuffer_LN, &OnAddDrawingBuffer_LN, &AddDrawingBuffer_LN) != MH_OK)
-	{
-		std::cout << "Couldn't hook AddDrawingBuffer_LN" << std::endl;
-	}
+	SetObjectString = safetyhook::create_inline(0x4B6C40, OnSetObjectString);
 
-	if (MH_CreateHookEx((LPVOID)SetObjectString, &OnSetObjectString, &SetObjectString) != MH_OK)
-	{
-		std::cout << "Couldn't hook SetObjectString" << std::endl;
-	}
-
-	if (MH_QueueEnableHook(MH_ALL_HOOKS) || MH_ApplyQueued() != MH_OK)
-	{
-		std::cout << ("Couldn't enable misc hooks") << std::endl;
-	}
+	DSTDbyTime = safetyhook::create_inline(0x49C880, OnDSTDbyTime);
 }
 
 static void HelpMarker(const char* desc) {
@@ -1489,6 +1460,12 @@ void Misc::Menu() {
 	}
 	ImGui::SameLine();
 	HelpMarker("Makes the song load faster by loading keysounds on multiple threads. Also, allows for safe use of song preview feature. For even faster loading, an update of 'fmodex.dll' to version 4.26.2 is recommended");
+
+	if (ImGui::Checkbox("Songbar Fix", &mIsSongbarFix)) {
+		config.WriteValueAndSave("bSongbarFix", mIsSongbarFix);
+	}
+	ImGui::SameLine();
+	HelpMarker("Fixes a bug where songbars would sometimes loose transparency during movement");
 
 	if (ImGui::Checkbox("Analog scratch support", &mIsAnalogInput)) {
 		config.WriteValueAndSave("bAnalogInput", mIsAnalogInput);

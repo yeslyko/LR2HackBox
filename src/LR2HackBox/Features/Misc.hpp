@@ -80,7 +80,6 @@ private:
 
 	static int OnSaveDrawScreenToPNG(int x1, int y1, int x2, int y2, const char* FileName, int CompressionLevel);
 
-	static int OnAddDrawingBuffer_PlayArea(void* drb, void* src, void* dst, void* T, float shiftX, float shiftY, int alpha, float sizeX, float sizeY, char flag);
 	static void OnBeforeAddDrawingBuffer_LN(SafetyHookContext& regs);
 	static int OnAddDrawingBuffer_LN(void* drb, void* srcLs, void* srcLe, void* srcLb, void* dst, void* T, float shiftX, float shiftY, float longY, int alpha, float sizeX, float sizeY);
 	int OnAddDrawingBuffer_LN_Fixed(void* drb, void* srcLs, void* srcLe, void* srcLb, void* dst, void* T, float shiftX, float shiftY, float longY, int alpha, float sizeX, float sizeY, void* lnObj);
@@ -121,6 +120,8 @@ private:
 	static void OnLoadKeysounds(SafetyHookContext& regs);
 	static void OnLoadKeysoundsExit(SafetyHookContext& regs);
 
+	static LR2::DSTdraw* OnDSTDbyTime(LR2::DSTdraw* oBuf, LR2::DSTdraw* dstd1, LR2::DSTdraw* dstd2, double t1, double t2, double tO);
+
 	std::vector<SafetyHookMid> mMidHooks;
 
 	bool mIsRetryTweaks = false;
@@ -144,4 +145,5 @@ private:
 	bool mIsBindsFix = false;
 	bool mIsNoGhostGaugetype = false;
 	bool mIsMultithreadKeysounds = false;
+	bool mIsSongbarFix = false;
 };
