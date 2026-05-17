@@ -38,7 +38,6 @@
     <ClInclude Include="Features\BattleFixes.hpp" />
     <ClInclude Include="Features\Funny.hpp" />
     <ClInclude Include="Features\GameOptions.hpp" />
-    <ClInclude Include="Features\GameplayModifiers.hpp" />
     <ClInclude Include="Features\JudgeLimiter.hpp" />
     <ClInclude Include="Features\LogConsole.hpp" />
     <ClInclude Include="Features\MemoryTracker.hpp" />
